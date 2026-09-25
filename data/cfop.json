@@ -1,1133 +1,1455 @@
 {
-  "f2l": [
-    {
-      "name": 1,
-      "case": "f2l-1",
-      "algs": [
-        "U (R U' R')"
-      ],
-      "group": "Basic Insert"
-    },
-    {
-      "name": 2,
-      "case": "f2l-2",
-      "algs": [
-        "y' U' (R' U R)",
-        "y U' (L' U L)"
-      ],
-      "group": "Basic Insert"
-    },
-    {
-      "name": 3,
-      "case": "f2l-3",
-      "algs": [
-        "y' (R' U' R)",
-        "y (L' U' L)"
-      ],
-      "group": "Basic Insert"
-    },
-    {
-      "name": 4,
-      "case": "f2l-4",
-      "algs": [
-        "(R U R')"
-      ],
-      "group": "Basic Insert"
-    },
-    {
-      "name": 5,
-      "case": "f2l-5",
-      "algs": [
-        "U' (R U' R' U) y' (R' U' R)",
-        "y' U (R' U' R U') (R' U' R)"
-      ],
-      "group": "Different Facing Up"
-    },
-    {
-      "name": 6,
-      "case": "f2l-6",
-      "algs": [
-        "U' (R U R' U) (R U R')"
-      ],
-      "group": "Different Facing Up"
-    },
-    {
-      "name": 7,
-      "case": "f2l-7",
-      "algs": [
-        "U' (R U2' R' U) y' (R' U' R)",
-        "U' (R U2' R') d (R' U' R)"
-      ],
-      "group": "Different Facing Up"
-    },
-    {
-      "name": 8,
-      "case": "f2l-8",
-      "algs": [
-        "R' U2' R2 U R2' U R",
-        "y' U (R' U2 R) U' y (R U R')",
-        "(R U' R' U) (R U' R') U2 (R U' R')"
-      ],
-      "group": "Different Facing Up"
-    },
-    {
-      "name": 9,
-      "case": "f2l-9",
-      "algs": [
-        "y' U (R' U R U') (R' U' R)"
-      ],
-      "group": "Different Facing Up"
-    },
-    {
-      "name": 10,
-      "case": "f2l-10",
-      "algs": [
-        "U' (R U' R' U) (R U R')"
-      ],
-      "group": "Different Facing Up"
-    },
-    {
-      "name": 11,
-      "case": "f2l-11",
-      "algs": [
-        "(U' R U R') U2 (R U' R')"
-      ],
-      "group": "Same Facing Up"
-    },
-    {
-      "name": 12,
-      "case": "f2l-12",
-      "algs": [
-        "y' (U R' U' R) U2' (R' U R) ",
-        " d (R' U' R) U2' (R' U R)"
-      ],
-      "group": "Same Facing Up"
-    },
-    {
-      "name": 13,
-      "case": "f2l-13",
-      "algs": [
-        "U' (R U2' R') U2 (R U' R')"
-      ],
-      "group": "Same Facing Up"
-    },
-    {
-      "name": 14,
-      "case": "f2l-14",
-      "algs": [
-        "y' U (R' U2 R) U2' (R' U R) ",
-        " d (R' U2 R) U2' (R' U R)"
-      ],
-      "group": "Same Facing Up"
-    },
-    {
-      "name": 15,
-      "case": "f2l-15",
-      "algs": [
-        "U (R U2 R') U (R U' R')"
-      ],
-      "group": "White Facing Up"
-    },
-    {
-      "name": 16,
-      "case": "f2l-16",
-      "algs": [
-        "y' U' (R' U2 R) U' (R' U R)"
-      ],
-      "group": "White Facing Up"
-    },
-    {
-      "name": 17,
-      "case": "f2l-17",
-      "algs": [
-        "U2 (R U R' U) (R U' R')",
-        "(R U' R') U2 (R U R')"
-      ],
-      "group": "White Facing Up"
-    },
-    {
-      "name": 18,
-      "case": "f2l-18",
-      "algs": [
-        "y' U2 (R' U' R) U' (R' U R)"
-      ],
-      "group": "White Facing Up"
-    },
-    {
-      "name": 19,
-      "case": "f2l-19",
-      "algs": [
-        "y' (R' U R) U2' y (R U R')",
-        "(R U R') U2 (R U' R' U) (R U' R')"
-      ],
-      "group": "Incorrectly Connected"
-    },
-    {
-      "name": 20,
-      "case": "f2l-20",
-      "algs": [
-        "(R U' R' U2) y' (R' U' R)",
-        "U F (R U R' U') F' (U R U' R')"
-      ],
-      "group": "Incorrectly Connected"
-    },
-    {
-      "name": 21,
-      "case": "f2l-21",
-      "algs": [
-        "(R U2 R') U' (R U R')"
-      ],
-      "group": "Incorrectly Connected"
-    },
-    {
-      "name": 22,
-      "case": "f2l-22",
-      "algs": [
-        "y' (R' U2 R) U (R' U' R)"
-      ],
-      "group": "Incorrectly Connected"
-    },
-    {
-      "name": 23,
-      "case": "f2l-23",
-      "algs": [
-        "U (R U' R' U') (R U' R' U) (R U' R')",
-        "(R U R' U2') (R U R' U') (R U R')"
-      ],
-      "group": "Incorrectly Connected"
-    },
-    {
-      "name": 24,
-      "case": "f2l-24",
-      "algs": [
-        "y' U' (R' U R U) (R' U R U') (R' U R)",
-        "F (U R U' R') F' (R U' R')"
-      ],
-      "group": "Incorrectly Connected"
-    },
-    {
-      "name": 25,
-      "case": "f2l-25",
-      "algs": [
-        "U' F' (R U R' U') R' F R",
-        "R' F' R U (R U' R') F"
-      ],
-      "group": "Corner In Edge Out"
-    },
-    {
-      "name": 26,
-      "case": "f2l-26",
-      "algs": [
-        "U (R U' R') U' (F' U F)",
-        "U (R U' R') (F R' F' R)"
-      ],
-      "group": "Corner In Edge Out"
-    },
-    {
-      "name": 27,
-      "case": "f2l-27",
-      "algs": [
-        "(R U' R' U) (R U' R')"
-      ],
-      "group": "Corner In Edge Out"
-    },
-    {
-      "name": 28,
-      "case": "f2l-28",
-      "algs": [
-        "y' (R' U R U') (R' U R)"
-      ],
-      "group": "Corner In Edge Out"
-    },
-    {
-      "name": 29,
-      "case": "f2l-29",
-      "algs": [
-        "y' (R' U' R U) (R' U' R)",
-        "(R' F R F') U (R U' R')"
-      ],
-      "group": "Corner In Edge Out"
-    },
-    {
-      "name": 30,
-      "case": "f2l-30",
-      "algs": [
-        "(R U R' U') (R U R')"
-      ],
-      "group": "Corner In Edge Out"
-    },
-    {
-      "name": 31,
-      "case": "f2l-31",
-      "algs": [
-        "(R U' R' U) y' (R' U R)",
-        "U' (R' F R F') (R U' R')"
-      ],
-      "group": "Edge In Corner Out"
-    },
-    {
-      "name": 32,
-      "case": "f2l-32",
-      "algs": [
-        "(U R U' R') (U R U' R') (U R U' R')"
-      ],
-      "group": "Edge In Corner Out"
-    },
-    {
-      "name": 33,
-      "case": "f2l-33",
-      "algs": [
-        "(U' R U' R') U2 (R U' R')"
-      ],
-      "group": "Edge In Corner Out"
-    },
-    {
-      "name": 34,
-      "case": "f2l-34",
-      "algs": [
-        "U (R U R') U2 (R U R')"
-      ],
-      "group": "Edge In Corner Out"
-    },
-    {
-      "name": 35,
-      "case": "f2l-35",
-      "algs": [
-        "(U' R U R') U y' (R' U' R)"
-      ],
-      "group": "Edge In Corner Out"
-    },
-    {
-      "name": 36,
-      "case": "f2l-36",
-      "algs": [
-        "U (F' U' F) U' (R U R')"
-      ],
-      "group": "Edge In Corner Out"
-    },
-    {
-      "name": 37,
-      "case": "f2l-37",
-      "algs": [
-        "(R U' R') d (R' U2 R) U2' (R' U R) "
-      ],
-      "group": "Both In Slot"
-    },
-    {
-      "name": 38,
-      "case": "f2l-38",
-      "algs": [
-        "(R U' R' U') R U R' U2 (R U' R')",
-        "(R U R' U') R U2 R' U' (R U R')"
-      ],
-      "group": "Both In Slot"
-    },
-    {
-      "name": 39,
-      "case": "f2l-39",
-      "algs": [
-        "(R U' R' U) (R U2' R') U (R U' R')",
-        "(R U R') U2' (R U' R' U) (R U R')"
-      ],
-      "group": "Both In Slot"
-    },
-    {
-      "name": 40,
-      "case": "f2l-40",
-      "algs": [
-        "(F' U F) U2 (R U R' U) (R U' R')",
-        "(R U' R') F (R U R' U') F' (R U' R')"
-      ],
-      "group": "Both In Slot"
-    },
-    {
-      "name": 41,
-      "case": "f2l-41",
-      "algs": [
-        "(R U R' U') (R U' R') U2 y' (R' U' R)"
-      ],
-      "group": "Both In Slot"
-    }
-  ],
-  "oll": [
-    {
-      "name": 1,
-      "case": "oll-1",
-      "algs": [
-        "R U2 R' R' F R F' U2 R' F R F'"
-      ],
-      "group": "Dot",
-      "probability": 2
-    },
-    {
-      "name": 2,
-      "case": "oll-2",
-      "algs": [
-        "r U r' U2 r U2 R' U2 R U' r'",
-        "y' F R U R' U' F' f R U R' U' f'",
-        "y' F R U R' U' S R U R' U' f'"
-      ],
-      "group": "Dot",
-      "probability": 4
-    },
-    {
-      "name": 3,
-      "case": "oll-3",
-      "algs": [
-        "r' R2 U R' U r U2 r' U M'",
-        "y F U R U' R' F' U F R U R' U' F'",
-        "y' f R U R' U' f' U' F R U R' U' F'"
-      ],
-      "group": "Dot",
-      "probability": 4
-    },
-    {
-      "name": 4,
-      "case": "oll-4",
-      "algs": [
-        "M U' r U2 r' U' R U' R' M'",
-        "y F U R U' R' F' U' F R U R' U' F'",
-        "y' f R U R' U' f' U F R U R' U' F'"
-      ],
-      "group": "Dot",
-      "probability": 4
-    },
-    {
-      "name": 5,
-      "case": "oll-5",
-      "algs": [
-        "l' U2 L U L' U l",
-        "y2 r' U2 R U R' U r"
-      ],
-      "group": "Square Shape",
-      "probability": 4
-    },
-    {
-      "name": 6,
-      "case": "oll-6",
-      "algs": [
-        "r U2 R' U' R U' r'"
-      ],
-      "group": "Square Shape",
-      "probability": 4
-    },
-    {
-      "name": 7,
-      "case": "oll-7",
-      "algs": [
-        "r U R' U R U2 r'"
-      ],
-      "group": "Small Lightning Bolt",
-      "probability": 4
-    },
-    {
-      "name": 8,
-      "case": "oll-8",
-      "algs": [
-        "l' U' L U' L' U2 l",
-        "R U2 R' U2 R' F R F'",
-        "y2 r' U' R U' R' U2 r"
-      ],
-      "group": "Small Lightning Bolt",
-      "probability": 4
-    },
-    {
-      "name": 9,
-      "case": "oll-9",
-      "algs": [
-        "R U R' U' R' F R2 U R' U' F'"
-      ],
-      "group": "Fish Shape",
-      "probability": 4
-    },
-    {
-      "name": 10,
-      "case": "oll-10",
-      "algs": [
-        "R U R' U R' F R F' R U2 R'",
-        "y2 r U R' U R U' R' U' r' R (U R U' R')"
-      ],
-      "group": "Fish Shape",
-      "probability": 4
-    },
-    {
-      "name": 11,
-      "case": "oll-11",
-      "algs": [
-        "r U R' U R' F R F' R U2 r'",
-        "y2 r' R2 U R' U R U2 R' U M'"
-      ],
-      "group": "Small Lightning Bolt",
-      "probability": 4
-    },
-    {
-      "name": 12,
-      "case": "oll-12",
-      "algs": [
-        "M' R' U' R U' R' U2 R U' R r'"
-      ],
-      "group": "Small Lightning Bolt",
-      "probability": 4
-    },
-    {
-      "name": 13,
-      "case": "oll-13",
-      "algs": [
-        "F U R U' R2 F' R U R U' R'",
-        "r U' r' U' r U r' y' R' U R"
-      ],
-      "group": "Knight Move Shape",
-      "probability": 4
-    },
-    {
-      "name": 14,
-      "case": "oll-14",
-      "algs": [
-        "R' F R U R' F' R F U' F'"
-      ],
-      "group": "Knight Move Shape",
-      "probability": 4
-    },
-    {
-      "name": 15,
-      "case": "oll-15",
-      "algs": [
-        "l' U' l L' U' L U l' U l",
-        "y2 r' U' r R' U' R U r' U r"
-      ],
-      "group": "Knight Move Shape",
-      "probability": 4
-    },
-    {
-      "name": 16,
-      "case": "oll-16",
-      "algs": [
-        "r U r' R U R' U' r U' r'"
-      ],
-      "group": "Knight Move Shape",
-      "probability": 4
-    },
-    {
-      "name": 17,
-      "case": "oll-17",
-      "algs": [
-        "F R' F' R2 r' U R U' R' U' M'",
-        "y2 R U R' U R' F R F' U2 R' F R F'"
-      ],
-      "group": "Dot",
-      "probability": 4
-    },
-    {
-      "name": 18,
-      "case": "oll-18",
-      "algs": [
-        "r U R' U R U2 r' r' U' R U' R' U2 r",
-        "y R U2 R' R' F R F' U2 M' (U R U' r')"
-      ],
-      "group": "Dot",
-      "probability": 4
-    },
-    {
-      "name": 19,
-      "case": "oll-19",
-      "algs": [
-        "r' R U R U R' U' M' R' F R F'"
-      ],
-      "group": "Dot",
-      "probability": 4
-    },
-    {
-      "name": 20,
-      "case": "oll-20",
-      "algs": [
-        "r U R' U' M2 U R U' R' U' M'",
-        "r' R U (R U R' U') M2 U R U' r'"
-      ],
-      "group": "Dot",
-      "probability": 1
-    },
-    {
-      "name": 21,
-      "case": "oll-21",
-      "algs": [
-        "R U2 R' U' R U R' U' R U' R'",
-        "y R U R' U R U' R' U R U2 R'"
-      ],
-      "group": "Cross",
-      "probability": 2
-    },
-    {
-      "name": 22,
-      "case": "oll-22",
-      "algs": [
-        "R U2 (R2 U' R2 U' R2) U2 R"
-      ],
-      "group": "Cross",
-      "probability": 4
-    },
-    {
-      "name": 23,
-      "case": "oll-23",
-      "algs": [
-        "R2 D' R U2 R' D R U2 R",
-        "y2 R2 D R' U2 R D' R' U2 R'"
-      ],
-      "group": "Cross",
-      "probability": 4
-    },
-    {
-      "name": 24,
-      "case": "oll-24",
-      "algs": [
-        "r U R' U' r' F R F'",
-        "y R U R D R' U' R D' R2"
-      ],
-      "group": "Cross",
-      "probability": 4
-    },
-    {
-      "name": 25,
-      "case": "oll-25",
-      "algs": [
-        "F' r U R' U' r' F R",
-        "y' R' F R B' R' F' R B"
-      ],
-      "group": "Cross",
-      "probability": 4
-    },
-    {
-      "name": 26,
-      "case": "oll-26",
-      "algs": [
-        "(R U2 R') U' R U' R'",
-        "y' R' U' R U' R' U2 R"
-      ],
-      "group": "Cross",
-      "probability": 4
-    },
-    {
-      "name": 27,
-      "case": "oll-27",
-      "algs": [
-        "R U R' U R U2 R'",
-        "y' R' U2 (R U R' U) R"
-      ],
-      "group": "Cross",
-      "probability": 4
-    },
-    {
-      "name": 28,
-      "case": "oll-28",
-      "algs": [
-        "r U R' U' r' R U R U' R'"
-      ],
-      "group": "Corners Oriented",
-      "probability": 4
-    },
-    {
-      "name": 29,
-      "case": "oll-29",
-      "algs": [
-        "R U R' U' R U' R' F' U' F R U R'"
-      ],
-      "group": "Awkward Shape",
-      "probability": 4
-    },
-    {
-      "name": 30,
-      "case": "oll-30",
-      "algs": [
-        "F R' F R2 U' R' U' R U R' F2",
-        "F U (R U2 R' U') R U2 R' U' F'"
-      ],
-      "group": "Awkward Shape",
-      "probability": 4
-    },
-    {
-      "name": 31,
-      "case": "oll-31",
-      "algs": [
-        "R' U' F U R U' R' F' R"
-      ],
-      "group": "P Shape",
-      "probability": 4
-    },
-    {
-      "name": 32,
-      "case": "oll-32",
-      "algs": [
-        "L U F' U' L' U L F L'",
-        "y2 S R U R' U' R F R f'"
-      ],
-      "group": "P Shape",
-      "probability": 4
-    },
-    {
-      "name": 33,
-      "case": "oll-33",
-      "algs": [
-        "R U R' U' R' F R F'"
-      ],
-      "group": "T Shape",
-      "probability": 4
-    },
-    {
-      "name": 34,
-      "case": "oll-34",
-      "algs": [
-        "R U R2 U' R' F R U R U' F'",
-        "R U R' U' B' R' F R F' B"
-      ],
-      "group": "C Shape",
-      "probability": 4
-    },
-    {
-      "name": 35,
-      "case": "oll-35",
-      "algs": [
-        "R U2 R' R' F R F' R U2 R'"
-      ],
-      "group": "Fish Shape",
-      "probability": 4
-    },
-    {
-      "name": 36,
-      "case": "oll-36",
-      "algs": [
-        "L' U' L U' L' U L U L F' L' F",
-        "y2 R' U' R U' R' U R U R B' R' B"
-      ],
-      "group": "W Shape",
-      "probability": 4
-    },
-    {
-      "name": 37,
-      "case": "oll-37",
-      "algs": [
-        "F R' F' R U R U' R'",
-        "F R U' R' U' R U R' F'"
-      ],
-      "group": "Fish Shape",
-      "probability": 4
-    },
-    {
-      "name": 38,
-      "case": "oll-38",
-      "algs": [
-        "R U R' U R U' R' U' R' F R F'"
-      ],
-      "group": "W Shape",
-      "probability": 4
-    },
-    {
-      "name": 39,
-      "case": "oll-39",
-      "algs": [
-        "L F' L' U' L U F U' L'",
-        "y2 R B' R' U' R U B U' R'"
-      ],
-      "group": "Big Lightning Bolt",
-      "probability": 4
-    },
-    {
-      "name": 40,
-      "case": "oll-40",
-      "algs": [
-        "R' F R U R' U' F' U R"
-      ],
-      "group": "Big Lightning Bolt",
-      "probability": 4
-    },
-    {
-      "name": 41,
-      "case": "oll-41",
-      "algs": [
-        "R U R' U R U2 R' F R U R' U' F'"
-      ],
-      "group": "Awkward Shape",
-      "probability": 4
-    },
-    {
-      "name": 42,
-      "case": "oll-42",
-      "algs": [
-        "R' U' R U' R' U2 R F R U R' U' F'"
-      ],
-      "group": "Awkward Shape",
-      "probability": 4
-    },
-    {
-      "name": 43,
-      "case": "oll-43",
-      "algs": [
-        "F' U' L' U L F",
-        "R' U' F R' F' R U R"
-      ],
-      "group": "P Shape",
-      "probability": 4
-    },
-    {
-      "name": 44,
-      "case": "oll-44",
-      "algs": [
-        "F U R U' R' F'",
-        "y2 f R U R' U' f'"
-      ],
-      "group": "P Shape",
-      "probability": 4
-    },
-    {
-      "name": 45,
-      "case": "oll-45",
-      "algs": [
-        "F R U R' U' F'"
-      ],
-      "group": "T Shape",
-      "probability": 4
-    },
-    {
-      "name": 46,
-      "case": "oll-46",
-      "algs": [
-        "R' U' R' F R F' U R"
-      ],
-      "group": "C Shape",
-      "probability": 4
-    },
-    {
-      "name": 47,
-      "case": "oll-47",
-      "algs": [
-        "R' U' R' F R F' R' F R F' U R",
-        "F' L' U' L U L' U' L U F",
-        "y' F U R U' R' F' R U R' U R U2 R'"
-      ],
-      "group": "Small L Shape",
-      "probability": 4
-    },
-    {
-      "name": 48,
-      "case": "oll-48",
-      "algs": [
-        "F R U R' U' R U R' U' F'"
-      ],
-      "group": "Small L Shape",
-      "probability": 4
-    },
-    {
-      "name": 49,
-      "case": "oll-49",
-      "algs": [
-        "r U' r2 U r2 U r2 U' r"
-      ],
-      "group": "Small L Shape",
-      "probability": 4
-    },
-    {
-      "name": 50,
-      "case": "oll-50",
-      "algs": [
-        "r' U r2 U' r2 U' r2 U r'"
-      ],
-      "group": "Small L Shape",
-      "probability": 4
-    },
-    {
-      "name": 51,
-      "case": "oll-51",
-      "algs": [
-        "F U R U' R' U R U' R' F'",
-        "y2 f R U R' U' R U R' U' f'"
-      ],
-      "group": "I Shape",
-      "probability": 4
-    },
-    {
-      "name": 52,
-      "case": "oll-52",
-      "algs": [
-        "R U R' U R U' B U' B' R'",
-        "R' F' U' F U' (R U R' U) R",
-        "R U R' U R U' y R U' R' F'"
-      ],
-      "group": "I Shape",
-      "probability": 4
-    },
-    {
-      "name": 53,
-      "case": "oll-53",
-      "algs": [
-        "l' U2 L U L' U' L U L' U l",
-        "y2 r' U2 (R U R' U') R U R' U r",
-        "y r' U' R U' R' U R U' R' U2 r"
-      ],
-      "group": "Small L Shape",
-      "probability": 4
-    },
-    {
-      "name": 54,
-      "case": "oll-54",
-      "algs": [
-        "(r U2 R' U') R U R' U' R U' r'",
-        "y r U R' U R U' R' U R U2 r'"
-      ],
-      "group": "Small L Shape",
-      "probability": 4
-    },
-    {
-      "name": 55,
-      "case": "oll-55",
-      "algs": [
-        "R' F R U R U' R2 F' R2 U' R' U R U R'",
-        "y R U2 R2 U' R U' R' U2 F R F'"
-      ],
-      "group": "I Shape",
-      "probability": 2
-    },
-    {
-      "name": 56,
-      "case": "oll-56",
-      "algs": [
-        "(r' U' r) U' R' U R U' R' U R r' U r",
-        "(r U r') U R U' R' U R U' R' (r U' r')",
-        "(r U r') U R U' R' U R U' M' U' r'"
-      ],
-      "group": "I Shape",
-      "probability": 2
-    },
-    {
-      "name": 57,
-      "case": "oll-57",
-      "algs": [
-        "R U R' U' M' U R U' r'"
-      ],
-      "group": "Corners Oriented",
-      "probability": 2
-    }
-  ],
-  "pll": [
-    {
-      "name": "H",
-      "case": "pll-H",
-      "algs": [
-        "M2 U M2 U2 M2 U M2",
-        "M2 U' M2 U2 M2 U' M2"
-      ],
-      "group": "Edges Only",
-      "probability": 1
-    },
-    {
-      "name": "Z",
-      "case": "pll-Z",
-      "algs": [
-        "M' U M2 U M2 U M' U2 M2",
-        "y M' U' M2 U' M2 U' M' U2 M2",
-        "y M2 U M2 U M' U2 M2 U2 M'",
-        "M2 U' M2 U' M' U2 M2 U2 M'"
-      ],
-      "group": "Edges Only",
-      "probability": 2
-    },
-    {
-      "name": "Ua",
-      "case": "pll-Ua",
-      "algs": [
-        "M2 U M U2 M' U M2",
-        "R U' R U R U R U' R' U' R2",
-        "y2 R2 U' R' U' R U R U R U' R"
-      ],
-      "group": "Edges Only",
-      "probability": 4
-    },
-    {
-      "name": "Ub",
-      "case": "pll-Ub",
-      "algs": [
-        "M2 U' M U2 M' U' M2",
-        "R2 U (R U R' U') R' U' R' U R'",
-        "y2 R' U R' U' R' U' (R' U R U) R2",
-        "y2 R' U R' U' R3 U' (R' U R U) R2"
-      ],
-      "group": "Edges Only",
-      "probability": 4
-    },
-    {
-      "name": "Aa",
-      "case": "pll-Aa",
-      "algs": [
-        "x L2 D2 L' U' L D2 L' U L'",
-        "y' x' L' U L' D2 L U' L' D2 L2",
-        "y x R' U R' D2 R U' R' D2 R2",
-        "y2 x' R2 D2 R' U' R D2 R' U R'"
-      ],
-      "group": "Adjacent Corner Swap",
-      "probability": 4
-    },
-    {
-      "name": "Ab",
-      "case": "pll-Ab",
-      "algs": [
-        "x' L2 D2 L U L' D2 L U' L",
-        "y x L U' L D2 L' U L D2 L2",
-        "y2 x R2 D2 R U R' D2 R U' R",
-        "y' x' R U' R D2 R' U R D2 R2"
-      ],
-      "group": "Adjacent Corner Swap",
-      "probability": 4
-    },
-    {
-      "name": "E",
-      "case": "pll-E",
-      "algs": [
-        "x' L' U L D' L' U' L D L' U' L D' L' U L D",
-        "x' R U' R' D R U R' D' R U R' D R U' R' D'"
-      ],
-      "group": "Diagonal Corner Swap",
-      "probability": 2
-    },
-    {
-      "name": "F",
-      "case": "pll-F",
-      "algs": [
-        "R' U' F' R U R' U' R' F R2 U' R' U' R U R' U R"
-      ],
-      "group": "Adjacent Corner Swap",
-      "probability": 4
-    },
-    {
-      "name": "Ja",
-      "case": "pll-Ja",
-      "algs": [
-        "x R2 F R F' R U2 r' U r U2",
-        "y2 L' U' L F L' U' L U L F' L2 U L",
-        "y' R' U L' U2 R U' R' U2 R L"
-      ],
-      "group": "Adjacent Corner Swap",
-      "probability": 4
-    },
-    {
-      "name": "Jb",
-      "case": "pll-Jb",
-      "algs": [
-        "R U R' F' R U R' U' R' F R2 U' R'"
-      ],
-      "group": "Adjacent Corner Swap",
-      "probability": 4
-    },
-    {
-      "name": "Ra",
-      "case": "pll-Ra",
-      "algs": [
-        "R U' R' U' R U R D R' U' R D' R' U2 R'",
-        "R U R' F' R U2 R' U2 R' F R U R U2 R'",
-        "y' L U2 L' U2 L F' L' U' L U L F L2"
-      ],
-      "group": "Adjacent Corner Swap",
-      "probability": 4
-    },
-    {
-      "name": "Rb",
-      "case": "pll-Rb",
-      "algs": [
-        "R2 F R U R U' R' F' R U2 R' U2 R",
-        "y' R' U2 R U2 R' F R U R' U' R' F' R2",
-        "R' U2 R' D' R U' R' D R U R U' R' U' R"
-      ],
-      "group": "Adjacent Corner Swap",
-      "probability": 4
-    },
-    {
-      "name": "T",
-      "case": "pll-T",
-      "algs": [
-        "R U R' U' R' F R2 U' R' U' (R U R') F'"
-      ],
-      "group": "Adjacent Corner Swap",
-      "probability": 4
-    },
-    {
-      "name": "Y",
-      "case": "pll-Y",
-      "algs": [
-        "F R U' R' U' R U R' F' R U R' U' R' F R F'",
-        "F R' F R2 U' R' U' R U R' F' R U R' U' F'"
-      ],
-      "group": "Diagonal Corner Swap",
-      "probability": 4
-    },
-    {
-      "name": "V",
-      "case": "pll-V",
-      "algs": [
-        "R' U R' U' y R' F' R2 U' R' U R' F R F",
-        "R' U R' U' R D' R' D R' U D' R2 U' R2 D R2",
-        "z D' R2 D R2 U R' D' R U' R U R' D R U' z'",
-        "R U2 R' D R U' R U' R U R2 D R' U' R D2",
-        "x' R' F R F' U R U2 R' U' R U' R' U2 R U R' U'"
-      ],
-      "group": "Diagonal Corner Swap",
-      "probability": 4
-    },
-    {
-      "name": "Na",
-      "case": "pll-Na",
-      "algs": [
-        "R U R' U R U R' F' R U R' U' R' F R2 U' R' U2 R U' R'",
-        "z U R' D R2 U' R D' U R' D R2 U' R D'"
-      ],
-      "group": "Diagonal Corner Swap",
-      "probability": 1
-    },
-    {
-      "name": "Nb",
-      "case": "pll-Nb",
-      "algs": [
-        "R' (U R U' R') F' U' F R U R' F R' F' R U' R",
-        "z D' R U' R2 D R' U D' R U' R2 D R' U"
-      ],
-      "group": "Diagonal Corner Swap",
-      "probability": 1
-    },
-    {
-      "name": "Ga",
-      "case": "pll-Ga",
-      "algs": [
-        "R2 U R' U R' U' R U' R2 (U' D) R' U R D'",
-        "R2 u R' U R' U' R u' R2 y' R' U R"
-      ],
-      "group": "Adjacent Corner Swap",
-      "probability": 4
-    },
-    {
-      "name": "Gb",
-      "case": "pll-Gb",
-      "algs": [
-        "R' U' R (U D') R2 U R' U R U' R U' R2 D",
-        "y F' U' F R2 u R' U R U' R u' R2"
-      ],
-      "group": "Adjacent Corner Swap",
-      "probability": 4
-    },
-    {
-      "name": "Gc",
-      "case": "pll-Gc",
-      "algs": [
-        "R2 U' R U' R U R' U R2 (U D') R U' R' D",
-        "y2 R2 F2 R U2 R U2 R' F R U R' U' R' F R2",
-        "R2 u' R U' R U R' u R2 y R U' R'"
-      ],
-      "group": "Adjacent Corner Swap",
-      "probability": 4
-    },
-    {
-      "name": "Gd",
-      "case": "pll-Gd",
-      "algs": [
-        "R U R' (U' D) R2 U' R U' R' U R' U R2 D'",
-        "R U R' y' R2 u' R U' R' U R' u R2"
-      ],
-      "group": "Adjacent Corner Swap",
-      "probability": 4
-    }
-  ]
+ "f2l": [
+  {
+   "name": 1,
+   "case": "f2l-1",
+   "algs": [
+    "U R U' R'",
+    "R' F R F'",
+    "U2 R U2 R'"
+   ],
+   "group": "Basic Inserts"
+  },
+  {
+   "name": 2,
+   "case": "f2l-2",
+   "algs": [
+    "y' U' R' U R",
+    "U' F' U F",
+    "F R' F' R",
+    "y U' L' U L",
+    "d' L' U L"
+   ],
+   "group": "Basic Inserts"
+  },
+  {
+   "name": 3,
+   "case": "f2l-3",
+   "algs": [
+    "y' R' U' R",
+    "y L' U' L"
+   ],
+   "group": "Basic Inserts"
+  },
+  {
+   "name": 4,
+   "case": "f2l-4",
+   "algs": [
+    "R U R'",
+    "y F U F'",
+    "y' f R f'"
+   ],
+   "group": "Basic Inserts"
+  },
+  {
+   "name": 5,
+   "case": "f2l-5",
+   "algs": [
+    "U' R U R' U2 R U' R'",
+    "U' R U R' U R' F R F'",
+    "U' R U R' U' R U2 R'",
+    "U F' R' F' R F",
+    "U R F R' F' R'"
+   ],
+   "group": "Reposition Edge"
+  },
+  {
+   "name": 6,
+   "case": "f2l-6",
+   "algs": [
+    "d R' U' R U2' R' U R",
+    "y' U R' U' R U2 R' U R",
+    "U' r U' R' U R U r'",
+    "y F2 R U R' U' F2",
+    "U' F' R' F R F",
+    "U' R F R F' R'"
+   ],
+   "group": "Reposition Edge"
+  },
+  {
+   "name": 7,
+   "case": "f2l-7",
+   "algs": [
+    "U' R U2' R' U2 R U' R'",
+    "U' R U2 R' U' R U2 R'"
+   ],
+   "group": "Reposition Edge"
+  },
+  {
+   "name": 8,
+   "case": "f2l-8",
+   "algs": [
+    "d R' U2 R U2' R' U R",
+    "y' U R' U2 R U2 R' U R",
+    "U R' F R F' R' F R F' R U' R'",
+    "r' U2 R2 U R2 U r"
+   ],
+   "group": "Reposition Edge"
+  },
+  {
+   "name": 9,
+   "case": "f2l-9",
+   "algs": [
+    "U' R U' R' d R' U' R",
+    "U' R U' R' U F' U' F",
+    "d R' U' R U' R' U' R",
+    "F R U R' U' F' R U' R'",
+    "y F2 U R U' R' F2",
+    "R' U' R F' U' F",
+    "F U' F2' U' F"
+   ],
+   "group": "Reposition Edge and Flip Corner"
+  },
+  {
+   "name": 10,
+   "case": "f2l-10",
+   "algs": [
+    "U' R U R' U R U R'",
+    "R d' R U R' U2 F'",
+    "U F' U F U' R U R'",
+    "d R' U R d' R U R'",
+    "y2 B2 U' R' U R B2",
+    "F U F' R U R'",
+    "R' U R2 U R'"
+   ],
+   "group": "Reposition Edge and Flip Corner"
+  },
+  {
+   "name": 11,
+   "case": "f2l-11",
+   "algs": [
+    "U' R U2' R' d R' U' R",
+    "U' R U2' R' U F' U' F",
+    "y' R U2 R2 U' R2 U' R'",
+    "L U2 L2 U' L"
+   ],
+   "group": "Reposition Edge and Flip Corner"
+  },
+  {
+   "name": 12,
+   "case": "f2l-12",
+   "algs": [
+    "R U' R' U R U' R' U2 R U' R'",
+    "R U2 R' U2' R U2' R' U2' R U' R'",
+    "R' U2 R2 U R2 U R",
+    "U R U' R' U' R U R' U' R U R'",
+    "R U R' U R' F R F' R U R'",
+    "R' U2 R2 U R'"
+   ],
+   "group": "Reposition Edge and Flip Corner"
+  },
+  {
+   "name": 13,
+   "case": "f2l-13",
+   "algs": [
+    "d R' U R U' R' U' R",
+    "y' U R' U R U' R' U' R",
+    "R U' R' U R' F R F' R U' R'",
+    "U R U' R' U R U' R' F R' F' R",
+    "F U F' R' U' R"
+   ],
+   "group": "Reposition Edge and Flip Corner"
+  },
+  {
+   "name": 14,
+   "case": "f2l-14",
+   "algs": [
+    "U' R U' R' U R U R'",
+    "F U' F' R U R'"
+   ],
+   "group": "Reposition Edge and Flip Corner"
+  },
+  {
+   "name": 15,
+   "case": "f2l-15",
+   "algs": [
+    "R' D' R U' R' D R U R U' R'",
+    "F' U F U2 R U R'",
+    "U R' F R F' U R U R'",
+    "R U2 R' U R U R' U R U' R'",
+    "R U R' U2 R U' R' U R U' R'",
+    "R U' R U2' R2' U' R2 U' R2'",
+    "U' R2 U2 R U' R' U R' U2 R2",
+    "U2 R U R' U' R U2 R' U R U R'",
+    "U' R' U2 R' U R' U' R U2 R",
+    "R U' R U2 R2 U' R2 U' R2",
+    "U' R' U R U' R U R'",
+    "U R U' R' D R U' R' D'",
+    "R F U F' U' R'"
+   ],
+   "group": "Split Pair by Going Over"
+  },
+  {
+   "name": 16,
+   "case": "f2l-16",
+   "algs": [
+    "R U' R' U d R' U' R",
+    "R U' R' U2 F' U' F",
+    "U R F R U R' U' F' R'",
+    "y' U R U2 R U' R U R' U2 R'",
+    "F' R' U' R U F"
+   ],
+   "group": "Split Pair by Going Over"
+  },
+  {
+   "name": 17,
+   "case": "f2l-17",
+   "algs": [
+    "R U2 R' U' R U R'"
+   ],
+   "group": "Split Pair by Going Over"
+  },
+  {
+   "name": 18,
+   "case": "f2l-18",
+   "algs": [
+    "y' R' U2 R U R' U' R",
+    "y L' U2 L U L' U' L",
+    "R U R' U' R U R' U' F R' F' R",
+    "R' F R F' R U' R' U R U' R'"
+   ],
+   "group": "Split Pair by Going Over"
+  },
+  {
+   "name": 19,
+   "case": "f2l-19",
+   "algs": [
+    "U R U2 R' U R U' R'",
+    "R U' R' U R U' R' U R U R'"
+   ],
+   "group": "Pair Made on Side"
+  },
+  {
+   "name": 20,
+   "case": "f2l-20",
+   "algs": [
+    "y' U' R' U2 R U' R' U R",
+    "U' R U' R2' F R F' R U' R'",
+    "y' R' U R U' R' U R U' R' U' R"
+   ],
+   "group": "Pair Made on Side"
+  },
+  {
+   "name": 21,
+   "case": "f2l-21",
+   "algs": [
+    "R U' R' U2 R U R'",
+    "U2 R U R' U R U' R'"
+   ],
+   "group": "Pair Made on Side"
+  },
+  {
+   "name": 22,
+   "case": "f2l-22",
+   "algs": [
+    "y' R' U R U2 R' U' R",
+    "y' U2 R' U' R U' R' U R",
+    "r U' r' U2 r U r'",
+    "U F R U R' U' F' R U R' U2'"
+   ],
+   "group": "Pair Made on Side"
+  },
+  {
+   "name": 23,
+   "case": "f2l-23",
+   "algs": [
+    "U2 R2 U2 R' U' R U' R2",
+    "U F R' F' R U R U R'",
+    "U R U' R' U' R U' R' U R U' R'",
+    "R U R' U' U' R U R' U' R U R'",
+    "R U' R' U' R U R' U2 R U R'",
+    "R2 U R' U R U2 R' U' R'"
+   ],
+   "group": "Weird"
+  },
+  {
+   "name": 24,
+   "case": "f2l-24",
+   "algs": [
+    "R U R' d R' U R U' R' U R",
+    "y' R' U' R U U R' U' R U R' U' R",
+    "y' U2 R2 U2 R U R' U R2",
+    "U' R U R2' F R F' R U' R'",
+    "F U R U' R' F' R U' R'",
+    "R U R' U R U R' U' F R' F' R",
+    "R U R' U R U2 R' F' U2 F"
+   ],
+   "group": "Weird"
+  },
+  {
+   "name": 25,
+   "case": "f2l-25",
+   "algs": [
+    "U' R' F R F' R U R'",
+    "R' U' R' U' R' U R U R",
+    "U' F' U F U R U' R'",
+    "R' F' R U R U' R' F",
+    "U' F' R U R' U' R' F R",
+    "R U' R' U' R U' R' U R U R'",
+    "U R' U' R' U' R2 U R U R",
+    "U2 R' U' R' U' R U R U R",
+    "R2 U' R' U R2",
+    "U D' R U' R' D"
+   ],
+   "group": "Corner in Place, Edge in U Face"
+  },
+  {
+   "name": 26,
+   "case": "f2l-26",
+   "algs": [
+    "y' R U R U R U' R' U' R'",
+    "U R U' R' U' F' U F",
+    "U R U' R' F R' F' R",
+    "y' U' R U R U R2 U' R' U' R'",
+    "y' U2 R U R U R' U' R' U' R'",
+    "r U r' U2 r U r' U2 r U' r'",
+    "U l F' l' F R' F' R",
+    "d R B' R' B R' U' R"
+   ],
+   "group": "Corner in Place, Edge in U Face"
+  },
+  {
+   "name": 27,
+   "case": "f2l-27",
+   "algs": [
+    "R U' R' U R U' R'",
+    "R U' R2 F R F'"
+   ],
+   "group": "Corner in Place, Edge in U Face"
+  },
+  {
+   "name": 28,
+   "case": "f2l-28",
+   "algs": [
+    "R U R' U' F R' F' R",
+    "R U R' d R' U2 R",
+    "y L' U L U' L' U L",
+    "y' R' U R U' R' U R",
+    "R U R' U F' U2 F"
+   ],
+   "group": "Corner in Place, Edge in U Face"
+  },
+  {
+   "name": 29,
+   "case": "f2l-29",
+   "algs": [
+    "y' R' U' R U R' U' R",
+    "U2 R U' R' y' R' U' R",
+    "R' F R F' R' F R F'",
+    "R' F R F' U R U' R'"
+   ],
+   "group": "Corner in Place, Edge in U Face"
+  },
+  {
+   "name": 30,
+   "case": "f2l-30",
+   "algs": [
+    "R U R' U' R U R'",
+    "U2 F' U F R U R'",
+    "U' R U2 R' U2 R U R'"
+   ],
+   "group": "Corner in Place, Edge in U Face"
+  },
+  {
+   "name": 31,
+   "case": "f2l-31",
+   "algs": [
+    "R U' R' d R' U R",
+    "R U' R' U F' U F",
+    "U' R' F R F' R U' R'",
+    "R U2 R' U' F R' F' R"
+   ],
+   "group": "Edge in Place, Corner in U face"
+  },
+  {
+   "name": 32,
+   "case": "f2l-32",
+   "algs": [
+    "R U R' U' R U R' U' R U R'",
+    "U R U' R' U R U' R' U R U' R'",
+    "U' R U R' U' R U R' U R U' R'"
+   ],
+   "group": "Edge in Place, Corner in U face"
+  },
+  {
+   "name": 33,
+   "case": "f2l-33",
+   "algs": [
+    "U' R U' R' U2' R U' R'",
+    "U' R U' R' U2 R U' R'",
+    "y U' L' U' L U2 L' U' L",
+    "u R U' R' u'",
+    "E F' U' F u"
+   ],
+   "group": "Edge in Place, Corner in U face"
+  },
+  {
+   "name": 34,
+   "case": "f2l-34",
+   "algs": [
+    "U F' U F U2 F' U F",
+    "U' R U2' R' U R U R'",
+    "U R U R' U2 R U R'",
+    "d R' U R U2 R' U R",
+    "y U L' U L U2 L' U L",
+    "U y F U2 R U2 R' F'",
+    "E' R U R' E",
+    "u' F' U F u"
+   ],
+   "group": "Edge in Place, Corner in U face"
+  },
+  {
+   "name": 35,
+   "case": "f2l-35",
+   "algs": [
+    "U' R U R' U F' U' F",
+    "U' R U R' d R' U' R",
+    "U2 R U' R' U' F' U' F"
+   ],
+   "group": "Edge in Place, Corner in U face"
+  },
+  {
+   "name": 36,
+   "case": "f2l-36",
+   "algs": [
+    "U F' U' F U' R U R'",
+    "U2 R' F R F' U2 R U R'",
+    "y' U R' U' R U' y R U R'"
+   ],
+   "group": "Edge in Place, Corner in U face"
+  },
+  {
+   "name": 38,
+   "case": "f2l-38",
+   "algs": [
+    "R' F R F' R U' R' U R U' R' U2 R U' R'",
+    "R U' R' d R' U2 R U2' R' U R",
+    "R U R' U2 R U2 R' d R' U' R",
+    "R2 U2 F R2 F' U2 R' U R'",
+    "R U R' U' R U2 R' d R' U' R U' R' U R",
+    "R U' R2 U2 R U' F' U F",
+    "R U' R2 U2 R F R' F' R",
+    "R U' R2 U2 R U2 F' U2 F"
+   ],
+   "group": "Edge and Corner in Place"
+  },
+  {
+   "name": 39,
+   "case": "f2l-39",
+   "algs": [
+    "R U' R' U' R U R' U2 R U' R'",
+    "y' R' U' R U2 R' U R U' R' U' R",
+    "R U R' U' R U2 R' U' R U R'"
+   ],
+   "group": "Edge and Corner in Place"
+  },
+  {
+   "name": 40,
+   "case": "f2l-40",
+   "algs": [
+    "R U' R' U R U2' R' U R U' R'",
+    "R U R' U2 R U' R' U R U R'",
+    "R U2 R U R' U R U2 R2'",
+    "y' R2 U2 R U R' U R U2 R"
+   ],
+   "group": "Edge and Corner in Place"
+  },
+  {
+   "name": 41,
+   "case": "f2l-41",
+   "algs": [
+    "r U' r' U2 r U r' R U R'",
+    "R U' R' d R' U' R U' R' U' R",
+    "R U' R' U' R U' R' d R' U' R",
+    "R F U R U' R' F' U' R'",
+    "R U' R2 U' R y' R' U' R y"
+   ],
+   "group": "Edge and Corner in Place"
+  },
+  {
+   "name": 42,
+   "case": "f2l-42",
+   "algs": [
+    "R U' R' r U' r' U2 r U r'",
+    "R U' R' U d R' U' R U' R' U R",
+    "R U' R' U2 y' R' U' R U' R' U R",
+    "R U R' U' R U' R' U2 F' U' F",
+    "R U F R U R' U' F' R'",
+    "y' R' U R2 U R' y R U R'"
+   ],
+   "group": "Edge and Corner in Place"
+  }
+ ],
+ "oll": [
+  {
+   "name": 1,
+   "case": "oll-1",
+   "algs": [
+    "R U2' R2' F R F' U2 R' F R F'",
+    "U R U' R2 D' r U' r' D R2 U R'"
+   ],
+   "group": "No edges flipped correctly"
+  },
+  {
+   "name": 2,
+   "case": "oll-2",
+   "algs": [
+    "U' R U' R2' D' r U r' D R2 U R'",
+    "F R U R' U' S R U R' U' f'",
+    "U2 f U R U' R' S' U R U' R' F'"
+   ],
+   "group": "No edges flipped correctly"
+  },
+  {
+   "name": 3,
+   "case": "oll-3",
+   "algs": [
+    "U f R U R' U' f' U' F R U R' U' F'",
+    "U2 r' R2 U R' U r U2 r' U M'",
+    "U2 L' l U l' U2 l U L' U L M'",
+    "U' R' F2 R2 U2' R' F R U2' R2' F2 R"
+   ],
+   "group": "No edges flipped correctly"
+  },
+  {
+   "name": 4,
+   "case": "oll-4",
+   "algs": [
+    "f R U R' U' f' U F R U R' U' F'",
+    "U l L2' U' L U' l' U2 l U' M'",
+    "U R r' U' r U2 r' U' R U' R2' r",
+    "R' F2 R2 U2' R' F' R U2' R2' F2 R"
+   ],
+   "group": "No edges flipped correctly"
+  },
+  {
+   "name": 5,
+   "case": "oll-5",
+   "algs": [
+    "U2 l' U2 L U L' U l",
+    "r' U2' R U R' U r"
+   ],
+   "group": "Square shapes"
+  },
+  {
+   "name": 6,
+   "case": "oll-6",
+   "algs": [
+    "U2 r U2 R' U' R U' r'"
+   ],
+   "group": "Square shapes"
+  },
+  {
+   "name": 7,
+   "case": "oll-7",
+   "algs": [
+    "r U R' U R U2 r'"
+   ],
+   "group": "Small lightning bolt shapes"
+  },
+  {
+   "name": 8,
+   "case": "oll-8",
+   "algs": [
+    "l' U' L U' L' U2 l",
+    "U2 r' U' R U' R' U2 r",
+    "R U2' R' U2 R' F R F'"
+   ],
+   "group": "Small lightning bolt shapes"
+  },
+  {
+   "name": 9,
+   "case": "oll-9",
+   "algs": [
+    "U' R U R' U' R' F R2 U R' U' F'"
+   ],
+   "group": "Fish shapes"
+  },
+  {
+   "name": 10,
+   "case": "oll-10",
+   "algs": [
+    "U' R U R' U R' F R F' R U2' R'",
+    "F U F' R' F R U' R' F' R"
+   ],
+   "group": "Fish shapes"
+  },
+  {
+   "name": 11,
+   "case": "oll-11",
+   "algs": [
+    "U' r' R2 U R' U R U2' R' U M'",
+    "U r U R' U R' F R F' R U2' r'"
+   ],
+   "group": "Small lightning bolt shapes"
+  },
+  {
+   "name": 12,
+   "case": "oll-12",
+   "algs": [
+    "U' r R2' U' R U' R' U2 R U' r' R",
+    "U l L2' U' L U' L' U2 L U' M'"
+   ],
+   "group": "Small lightning bolt shapes"
+  },
+  {
+   "name": 13,
+   "case": "oll-13",
+   "algs": [
+    "F U R U2' R' U' R U R' F'",
+    "F U R U' R2' F' R U R U' R'",
+    "r U' r' U' r U r' F' U F"
+   ],
+   "group": "Knight move shapes"
+  },
+  {
+   "name": 14,
+   "case": "oll-14",
+   "algs": [
+    "R' F R U R' F' R F U' F'"
+   ],
+   "group": "Knight move shapes"
+  },
+  {
+   "name": 15,
+   "case": "oll-15",
+   "algs": [
+    "U2 l' U' l L' U' L U l' U l",
+    "r' U' r R' U' R U r' U r"
+   ],
+   "group": "Knight move shapes"
+  },
+  {
+   "name": 16,
+   "case": "oll-16",
+   "algs": [
+    "U2 r U r' R U R' U' r U' r'"
+   ],
+   "group": "Knight move shapes"
+  },
+  {
+   "name": 17,
+   "case": "oll-17",
+   "algs": [
+    "R U R' U R' F R F' U2 R' F R F'",
+    "U2 F R' F' R U S' R U' R' S"
+   ],
+   "group": "No edges flipped correctly"
+  },
+  {
+   "name": 18,
+   "case": "oll-18",
+   "algs": [
+    "R U2 R2 F R F' U2 M' U R U' r'",
+    "U R U R2 F' U' F U R U2' R' F R F'",
+    "U F R U R' d R' U2 R' F R F'",
+    "U' r U R' U R U2 r2' U' R U' R' U2 r"
+   ],
+   "group": "No edges flipped correctly"
+  },
+  {
+   "name": 19,
+   "case": "oll-19",
+   "algs": [
+    "S' R U R' S U' R' F R F'",
+    "U' r' R U R U R' U' r R2 F R F'"
+   ],
+   "group": "No edges flipped correctly"
+  },
+  {
+   "name": 20,
+   "case": "oll-20",
+   "algs": [
+    "r' R U R U R' U' r R' M' U R U' r'",
+    "r U R' U' r R' M' U R U' R' U' M'",
+    "S' R U R' S U' M' U R U' r'",
+    "M U R U R' U' M2' U R U' r'"
+   ],
+   "group": "No edges flipped correctly"
+  },
+  {
+   "name": 21,
+   "case": "oll-21",
+   "algs": [
+    "R U R' U R U' R' U R U2 R'",
+    "U R U2' R' U' R U R' U' R U' R'",
+    "U F R U R' U' R U R' U' R U R' U' F'"
+   ],
+   "group": "All Corners Oriented"
+  },
+  {
+   "name": 22,
+   "case": "oll-22",
+   "algs": [
+    "R U2' R2' U' R2 U' R2' U2' R",
+    "f R U R' U' S' R U R' U' F'"
+   ],
+   "group": "All Corners Oriented"
+  },
+  {
+   "name": 23,
+   "case": "oll-23",
+   "algs": [
+    "R2' D' R U2 R' D R U2 R",
+    "U2 R2 D R' U2 R D' R' U2 R'",
+    "R U R' U' R U R' U' R U R' U' R' F R F' R' F R F' R' F R F'"
+   ],
+   "group": "All Corners Oriented"
+  },
+  {
+   "name": 24,
+   "case": "oll-24",
+   "algs": [
+    "r U R' U' r' F R F'",
+    "U2 l' U' L U l F' L' F"
+   ],
+   "group": "All Corners Oriented"
+  },
+  {
+   "name": 25,
+   "case": "oll-25",
+   "algs": [
+    "U2 F R' F' r U R U' r'",
+    "U' F' r U R' U' r' F R",
+    "F R B R' F' R B' R'",
+    "F l U l' F' l U' l'"
+   ],
+   "group": "All Corners Oriented"
+  },
+  {
+   "name": 26,
+   "case": "oll-26",
+   "algs": [
+    "y' R U2 R' U' R U' R'",
+    "U2 R' U' R U' R' U2 R",
+    "U' R U2' R' U' R U' R'",
+    "L' U' L U' L' U2 L"
+   ],
+   "group": "All Corners Oriented"
+  },
+  {
+   "name": 27,
+   "case": "oll-27",
+   "algs": [
+    "R U R' U R U2' R'",
+    "U' R' U2' R U R' U R"
+   ],
+   "group": "All Corners Oriented"
+  },
+  {
+   "name": 28,
+   "case": "oll-28",
+   "algs": [
+    "r U R' U' r' R U R U' R'",
+    "U2 M' U l L' U2 M' U l L'",
+    "U2 M' U M U2 M' U M"
+   ],
+   "group": "All Corners Oriented"
+  },
+  {
+   "name": 29,
+   "case": "oll-29",
+   "algs": [
+    "U R U R' U' R U' R' F' U' F R U R'",
+    "U R U R' U' R' F R F' R U R' U' M' U R U' r'",
+    "r2' D' r U r' D r2 U' r' U' r"
+   ],
+   "group": "Awkward shapes"
+  },
+  {
+   "name": 30,
+   "case": "oll-30",
+   "algs": [
+    "U2 F U R U2' R' U' R U2 R' U' F'",
+    "U' r' D' r U' r' D r2 U' r' U r U r'",
+    "U2 F R' F R2 U' R' U' R U R' F2'"
+   ],
+   "group": "Awkward shapes"
+  },
+  {
+   "name": 31,
+   "case": "oll-31",
+   "algs": [
+    "U2 R' U' F U R U' R' F' R"
+   ],
+   "group": "\"P\" shapes"
+  },
+  {
+   "name": 32,
+   "case": "oll-32",
+   "algs": [
+    "S R U R' U' R' F R f'",
+    "U2 L U F' U' L' U L F L'",
+    "R U B' U' R' U R B R'"
+   ],
+   "group": "\"P\" shapes"
+  },
+  {
+   "name": 33,
+   "case": "oll-33",
+   "algs": [
+    "R U R' U' R' F R F'"
+   ],
+   "group": "\"T\" shapes"
+  },
+  {
+   "name": 34,
+   "case": "oll-34",
+   "algs": [
+    "R U R2' U' R' F R U R U' F'",
+    "R U R' U' y l' U' L U L' l",
+    "U' f R f' U' r' U' R U M'"
+   ],
+   "group": "\"C\" shapes"
+  },
+  {
+   "name": 35,
+   "case": "oll-35",
+   "algs": [
+    "R U2' R2' F R F' R U2' R'"
+   ],
+   "group": "Fish shapes"
+  },
+  {
+   "name": 36,
+   "case": "oll-36",
+   "algs": [
+    "U2 L' U' L U' L' U L U L F' L' F",
+    "U2 R U R' F' R U R' U' R' F R U' R' F R F'",
+    "U2 R' F' U' F2 U R U' R' F' R",
+    "U R U R2' F' U' F U R2 U2' R'"
+   ],
+   "group": "\"W\" shapes"
+  },
+  {
+   "name": 37,
+   "case": "oll-37",
+   "algs": [
+    "U F R' F' R U R U' R'"
+   ],
+   "group": "Fish shapes"
+  },
+  {
+   "name": 38,
+   "case": "oll-38",
+   "algs": [
+    "U2 R U R' U R U' R' U' R' F R F'"
+   ],
+   "group": "\"W\" shapes"
+  },
+  {
+   "name": 39,
+   "case": "oll-39",
+   "algs": [
+    "L F' L' U' L U F U' L'",
+    "U2 R U R' F' U' F U R U2' R'",
+    "U2 f' r U r' U' r' F r S"
+   ],
+   "group": "Big lightning bolt shapes"
+  },
+  {
+   "name": 40,
+   "case": "oll-40",
+   "algs": [
+    "R' F R U R' U' F' U R"
+   ],
+   "group": "Big lightning bolt shapes"
+  },
+  {
+   "name": 41,
+   "case": "oll-41",
+   "algs": [
+    "U2 R U R' U R U2 R' F R U R' U' F'"
+   ],
+   "group": "Awkward shapes"
+  },
+  {
+   "name": 42,
+   "case": "oll-42",
+   "algs": [
+    "R' U' R U' R' U2' R F R U R' U' F'",
+    "R' U' R U' R' U2' R U R' F' U' F U R",
+    "U R' F R F' R' F R F' R U R' U' R U R'",
+    "U F R' F' R U2 R' U' R2 U' R2' U2' R"
+   ],
+   "group": "Awkward shapes"
+  },
+  {
+   "name": 43,
+   "case": "oll-43",
+   "algs": [
+    "U R' U' F' U F R"
+   ],
+   "group": "\"P\" shapes"
+  },
+  {
+   "name": 44,
+   "case": "oll-44",
+   "algs": [
+    "U2 F U R U' R' F'",
+    "f R U R' U' f'"
+   ],
+   "group": "\"P\" shapes"
+  },
+  {
+   "name": 45,
+   "case": "oll-45",
+   "algs": [
+    "F R U R' U' F'"
+   ],
+   "group": "\"T\" shapes"
+  },
+  {
+   "name": 46,
+   "case": "oll-46",
+   "algs": [
+    "R' U' R' F R F' U R"
+   ],
+   "group": "\"C\" shapes"
+  },
+  {
+   "name": 47,
+   "case": "oll-47",
+   "algs": [
+    "U' F R' F' R U2 R U' R' U R U2' R'",
+    "R' U' R' F R F' R' F R F' U R",
+    "F' L' U' L U L' U' L U F",
+    "U' R' F' U' F U F' U' F U R"
+   ],
+   "group": "\"L\" shapes"
+  },
+  {
+   "name": 48,
+   "case": "oll-48",
+   "algs": [
+    "F R U R' U' R U R' U' F'"
+   ],
+   "group": "\"L\" shapes"
+  },
+  {
+   "name": 49,
+   "case": "oll-49",
+   "algs": [
+    "U2 r U' r2' U r2 U r2' U' r",
+    "R B' R2' F R2 B R2' F' R"
+   ],
+   "group": "\"L\" shapes"
+  },
+  {
+   "name": 50,
+   "case": "oll-50",
+   "algs": [
+    "U2 R' F R2 B' R2' F' R2 B R'",
+    "r' U r2 U' r2' U' r2 U r'"
+   ],
+   "group": "\"L\" shapes"
+  },
+  {
+   "name": 51,
+   "case": "oll-51",
+   "algs": [
+    "F U R U' R' U R U' R' F'",
+    "U2 f R U R' U' R U R' U' f'",
+    "U R' U' R' F R F' R U2' R' U2 R"
+   ],
+   "group": "\"I\" shapes"
+  },
+  {
+   "name": 52,
+   "case": "oll-52",
+   "algs": [
+    "R U R' U R U' B U' B' R'",
+    "U2 R' F' U' F U' R U R' U R"
+   ],
+   "group": "\"I\" shapes"
+  },
+  {
+   "name": 53,
+   "case": "oll-53",
+   "algs": [
+    "l' U' L U' L' U L U' L' U2 l",
+    "U' r' U2' R U R' U' R U R' U r",
+    "U2 r' U' R U' R' U R U' R' U2 r"
+   ],
+   "group": "\"L\" shapes"
+  },
+  {
+   "name": 54,
+   "case": "oll-54",
+   "algs": [
+    "r U R' U R U' R' U R U2' r'",
+    "U' r U2' R' U' R U R' U' R U' r'"
+   ],
+   "group": "\"L\" shapes"
+  },
+  {
+   "name": 55,
+   "case": "oll-55",
+   "algs": [
+    "U R' F R U R U' R2' F' R2 U' R' U R U R'",
+    "U R' F U R U' R2' F' R2 U R' U' R",
+    "U r U2' R' U' r' R2 U R' U' r U' r'"
+   ],
+   "group": "\"I\" shapes"
+  },
+  {
+   "name": 56,
+   "case": "oll-56",
+   "algs": [
+    "r U r' U R U' R' U R U' R' r U' r'",
+    "r U r' U R U' R' M' U R U2' r'"
+   ],
+   "group": "\"I\" shapes"
+  },
+  {
+   "name": 57,
+   "case": "oll-57",
+   "algs": [
+    "R U R' U' M' U R U' r'"
+   ],
+   "group": "All Corners Oriented"
+  }
+ ],
+ "pll": [
+  {
+   "name": "Aa",
+   "case": "pll-Aa",
+   "algs": [
+    "U' x R' U R' D2 R U' R' D2 R2 x'",
+    "x' R2 D2 R' U' R D2 R' U R' x",
+    "U2 x L2 D2' L' U' L D2' L' U L' x'",
+    "U R' D R U' R' D' R U' R' D R U2 R' D' R",
+    "R2 F2 R' B' R F2 R' B R'",
+    "R B' D F' D' B' D F D' B B R'"
+   ],
+   "group": "Y Permutation"
+  },
+  {
+   "name": "Ab",
+   "case": "pll-Ab",
+   "algs": [
+    "U' x R2' D2 R U R' D2 R U' R x'",
+    "x' R U' R D2 R' U R D2 R2' x",
+    "U2 x L U' L D2' L' U L D2' L2' x'",
+    "U R' D R U2 R' D' R U R' D R U R' D' R",
+    "y L2 F2 L B L' F2 L B' L",
+    "y L' B D' F D B D' F' D B' B' L"
+   ],
+   "group": "Y Permutation"
+  },
+  {
+   "name": "E",
+   "case": "pll-E",
+   "algs": [
+    "U x' R U' R' D R U R' D' R U R' D R U' R' D' x",
+    "R' D' R U' R' D R U R' D' R U2 R' D R U' R' D' R U R' D R",
+    "R2 U R' d' R U R' U' R U R' U' R U R' F U' F2",
+    "F' r U R' U' r' F R U2 r U R' U' r' F R F'",
+    "F R B R' F' R L F L' B' L F' R' L'"
+   ],
+   "group": "E Permutation"
+  },
+  {
+   "name": "F",
+   "case": "pll-F",
+   "algs": [
+    "y L R2 U R U R2 U' R' U' R2 U' R U2 L' U R'",
+    "y R' U' F' R U R' U' R' F R2 U' R' U' R U R' U R",
+    "y x R' B' U' l U R' U' R' F R2 U' R' U' R U R' U R",
+    "y2 R' U2 R' d' R' F' R2 U' R' U R' F R U' F",
+    "M' U2 L F' R U2 r' U r' R2 U2 R2",
+    "R' U R U' R2 F' U' F U R F R' F' R2 U'",
+    "R' U R U' R' l' d' R' d B R U R' U' R l",
+    "y R2 F R F' R' U' F' U F R2 U R' U' R U",
+    "y2 R U' R' U R U F R U R' U' x' D' R2 D R D'",
+    "y2 R U' R' U R U F R U R' U' x U' R2 U R U'",
+    "R' U R U' R2 y' R' U' R U y x R U R' U' R2 x'",
+    "y' F r2 R' U2 r U' r' U2 x' R2 U' R' U r2 u' z'",
+    "B' U' R' B U B' U' B' R B2 U' B' U' B U B' U B",
+    "L U' L' U L2 F U F' U' L' F' L F L2 U",
+    "y2 R U' R' U R2 y R U R' U' x U' R' U R U2 x'",
+    "y' z R U R' U' R U2 z' y' R U R' U' y' x' R' U' R U R2 x",
+    "L F R' F' L' F' D2 B' L' B D2 F' R F2",
+    "R' U2 R U' R' f' U' R U2 R' U' R U' R' f U' R",
+    "y R2 B2 R2 L U' L F2 R' D L' F2 R L'",
+    "y R2 B2 R2 L U' L F2 R' D L' F2 M x",
+    "y R R F R F' R' U' F' U F R R U R' U' R",
+    "R' F' U' S' R U R' S U' R' F R' B' R' B"
+   ],
+   "group": "F Permutation"
+  },
+  {
+   "name": "Ga",
+   "case": "pll-Ga",
+   "algs": [
+    "y R2 U R' U R' U' R U' R2 D U' R' U R D'",
+    "y R2' u R' U R' U' R u' R2 y' R' U R",
+    "y2 F2' D R' U R' U' R D' F2 L' U L",
+    "R L U2 R' L' y' R' U L' U2 R U' L",
+    "R U2' R' U' F' R U R2 U' R' F R U R2 U2' R'",
+    "R U R' U' R' U F R U R U' R' F' U R' U2 R",
+    "y2 z U R U' R' U' R B U R U R' U' B' R U' R2 U z' y2'",
+    "y L F2 R F' L' F U R' U' F' L F' L'",
+    "y R2' S2 U l2' U' l2' u R2 U' r2' F2",
+    "y F B U2 F' B' L' U R' U2 L U' R",
+    "y' L2 S2 D F2 D' F2 U F2 U' B2 R2 z2",
+    "y' L L D F' U F' U' F D' L L B' U B"
+   ],
+   "group": "Ga Permutation"
+  },
+  {
+   "name": "Gb",
+   "case": "pll-Gb",
+   "algs": [
+    "R' U' R U D' R2 U R' U R U' R U' R2 D",
+    "R' U' R y R2 u R' U R U' R u' R2",
+    "y F' U' F R2 u R' U R U' R u' R2'",
+    "y2 R' U2 R U' F R U R' U' R' F' U' R U R U' R' y2'",
+    "R' U' R B2 D L' U L U' L D' B2",
+    "y2 L' U' L y' R2' u R' U R U' R u' R2",
+    "y' R' U L' U2 R U' L y R L U2 L' R'",
+    "R2 D L2 D F2 L D R' D2 L D' R' U2",
+    "y R2 F2 U R2 D' R2 D B2 U' F2 B2 R2",
+    "y R2 F2 U R2 D' R2 D B2 U' S2 L2 z2",
+    "R' U' R B B D L' U L U' L D' B B"
+   ],
+   "group": "Gb Permutation"
+  },
+  {
+   "name": "Gc",
+   "case": "pll-Gc",
+   "algs": [
+    "y R2 U' R U' R U R' U R2 D' U R U' R' D",
+    "y' R2 F2 R U2 R U2 R' F R U R' U' R' F R2",
+    "y R2' u' R U' R U R' u R2 y R U' R'",
+    "y R2' u' R U' R U R' u R2 B U' B'",
+    "y R2' U' R U' R U R' U R2 D' U R U' R' D",
+    "y R2' D' F U' F U F' D R2 B U' B'",
+    "y2 F2' D' L U' L U L' D F2 R U' R'",
+    "L' U' L U L U' F' L' U' L' U L F U' L U2 L'",
+    "y2 R' U' R U R U' B' R' U' R' U R B U' R U2 R' y2'",
+    "z U' R' U R U R' F' U' R' U' R U F R' U R2 U' z'",
+    "L' R' U2 L R y L U' R U2 L' U R'",
+    "B2 L2 U' B2 D B2 D' R2 U M2 F2 x2",
+    "y' R2' F2 R U2 R U2 R' F R U R' U' R' F R2",
+    "y' l' U2' L' U l F' U' L U F R' F R",
+    "y U F2 R2 L2 U' L2 U L2 D' L2 D R2 F2 U'",
+    "y' z U2 r' U R' U R U' r U2 F R' F' z' y",
+    "B2 R2 L2 U' R2 U R2 D' R2 D L2 B2",
+    "B2 M2 D' R2 D R2 U' R2 U L2 F2 x2",
+    "F' L L B' L F L' U' B U L F' L F"
+   ],
+   "group": "Gc Permutation"
+  },
+  {
+   "name": "Gd",
+   "case": "pll-Gd",
+   "algs": [
+    "y2 R U R' U' D R2 U' R U' R' U R' U R2 D'",
+    "y2 D' R U R' U' D R2 U' R U' R' U R' U R2",
+    "y2 R U R' y' R2 u' R U' R' U R' u R2",
+    "y2 R U R' F2 D' L U' L' U L' D F2",
+    "y2 L U2 L' U F' L' U' L U L F U L' U' L' U L",
+    "R U2' R' U B' R' U' R U R B U R' U' R' U R",
+    "y2 z U R2' U' R F' U' R' U R U F R U' R' U' R U z' y2'",
+    "y2 l2 U' L2 U' F2 L' U' R U2 L' U l x'",
+    "y L U' R U2 L' U R' y R' L' U2 R L",
+    "y f R f' R2 u' R U' R' U R' u R2",
+    "y' R' F' R F' U' L' U F R' F' L F2 R",
+    "y' R2' F' R U R U' R' F' R U2' R' U2' R' F2 R2",
+    "y z U2 B' U R U R' U' B' U R2' U' R2 U' B2 U2' z' y'",
+    "y2 R U R' F2 D' L U' L' U L' D F2 U2",
+    "y2 F U' R' F R2 U' R' U' R U R' F' U2 R U R' F' U' F U R U' R' F'",
+    "L U L' B2 D' R U' R' U R' D B2",
+    "B2 L2 U' B2 D B2 D' R2 U M2 F2 x2",
+    "F' L' F L' U' B' U L F' L' B L L F"
+   ],
+   "group": "Gd Permutation"
+  },
+  {
+   "name": "H",
+   "case": "pll-H",
+   "algs": [
+    "M2' U M2' U2 M2' U M2'",
+    "M2' U' M2' U2' M2' U' M2'",
+    "M2' U2 M2' U M2' U2 M2'",
+    "M2' U2 M2' U' M2' U' M2'",
+    "R2 F2 B2 L2 D' R2 F2 B2 L2",
+    "M2 D S2 D2 S2 D M2",
+    "R L U U R' L' F' B' U U F B"
+   ],
+   "group": "H Permutation"
+  },
+  {
+   "name": "Ja",
+   "case": "pll-Ja",
+   "algs": [
+    "y2 x R2' F R F' R U2 r' U r U2 x'",
+    "y2 L U' R' U L' U2 R U' R' U2 R",
+    "U R U R' U' R' F R2 U' R' U2 R U R' F' R U R' U' R' F R F'",
+    "y U R' U' R B R' U' R U l U' R2' F R x",
+    "y2 F U' R' F R2 U' R' U' R U R' F' R U R' F'",
+    "y2 F R U' R' F R U' R' U R U R2' F' R U F'",
+    "y2 R' U2 R U R' U2' L U' R U L'",
+    "L' U R' U2 L U' R U L' U R' U2 L U' R",
+    "y2 R' U2 R U R' U2 L U' R U L'",
+    "y R' U L' U2 R U' R' U2 R L",
+    "y2 F U' R U' R' U' R U R' F' R U R' U' R' F R U F'",
+    "B2 R' U' R B2 L' D L' D' L2",
+    "y2 F2 L' U' L F2 R' D R' D' R2",
+    "y2 F2 L' U' L b2 L' U L' U' r2",
+    "y2 R' U2 R U R' z R2' U R' D R U' z'",
+    "y2 R' U2' R U R' z R2 U R' D R U' z'",
+    "z D R' U' R D' R R U R' U' R2 U z'",
+    "R U' L' U R' U2 L U' L' U2' L",
+    "R' L' U2 L U L' U2 R U' L U",
+    "L' U2 L U L' U2 R U' L U R'",
+    "R' d' R U R' U F U F' U' R U2 R' U F U",
+    "y2 M' D2 M' R U R' F' R U R' U' R' F R2 U' R' M D2 M",
+    "L' U' L F L' U' L U L F' L2 U L U",
+    "y2 R' U L' U2 R U' L U R' U L' U2 R U' L",
+    "L2 D L D' L B2 R' U R B2",
+    "y F' B' U U B U B' U U F U' B"
+   ],
+   "group": "Ja Permutation"
+  },
+  {
+   "name": "Jb",
+   "case": "pll-Jb",
+   "algs": [
+    "y2 R' U L U' R U2' L' U L U2 L'",
+    "R U R' F' R U R' U' R' F R2 U' R' U'",
+    "R U2 R' U' R U2 L' U R' U' r x",
+    "R U2 R' U' R U2 L' U R' U' L",
+    "y R U' L U2 R' U R U2 L' R'",
+    "L' U R U' L U2 R' U R U2 R'",
+    "B2 L U L' B2 R D' R D R2",
+    "y2 F2 R U R' F2 L D' L D L2",
+    "y2 F2 R U R' b2 R U' R U l2'",
+    "y' x' L2 u L u' L2 x' y L U' L U r2",
+    "y2 x U2 l U l' U2 r U' L U r2",
+    "R U' L U2 R' U L' U' R U' L U2 R' U L'",
+    "B2 U D' B2 U B2 U' B2 D B2 U' B2 U",
+    "y' L2 U D' L2 U L2 U' L2 D L2 U' L2",
+    "R U R' F' R U R' U' l' U l2 F' l' U'",
+    "R2 U F U F' R2 F U' F' R2 U' R2 U'",
+    "R2 D' R' D R' B2 L U' L' B2",
+    "y' F B U' U' B' U' B U' U' F' U B'"
+   ],
+   "group": "Jb Permutation"
+  },
+  {
+   "name": "Na",
+   "case": "pll-Na",
+   "algs": [
+    "r' D r U2 r' D r U2 r' D r U2 r' D r U2 r' D r U2",
+    "r' D' r U2 r' D' r U2 r' D' r U2 r' D' r U2 r' D' r U2",
+    "l' D l U2 l' D l U2 l' D l U2 l' D l U2 l' D l U2",
+    "l' D' l U2 l' D' l U2 l' D' l U2 l' D' l U2 l' D' l U2",
+    "R U R' U R U R' F' R U R' U' R' F R2 U' R' U2 R U' R'",
+    "F' R U R' U' R' F R2 F U' R' U' R U F' R'",
+    "R F U' R' U R U F' R2 F' R U R U' R' F",
+    "z U' F R F' R' F' U F2' U R' F' R' F R U' F' z'",
+    "z B' U R U' R' U' B U2' B R' U' R' U R B' U' z'",
+    "L U' R U2 L' U R' L U' R U2 L' U R' U'",
+    "z U R' D R2 U' R D' U R' D R2 U' R D' z'",
+    "L' U L2 F2 U L' F2 L U' F2 L2 U' L",
+    "y z R' U R' D R2 U' R D' U R' D R2 U' R D' z'",
+    "R U' L U2 R' U L' R U' L U2 R' U L'",
+    "z D R' U R2 D' R U' D R' U R2 D' R U' z'",
+    "z U R' D R2 U' R U z' R' U' R z R2 U' R z' R'",
+    "R U' L d2 L' U L R' U' R U2 r' F l'",
+    "R' U R2 B2 U R' B2 R U' B2 R2 U' R",
+    "R B R' L' D' R B R' D L U' B U B' U' B'",
+    "F U' B U U F' U S' L' B L L F' L B' z"
+   ],
+   "group": "Na Permutation"
+  },
+  {
+   "name": "Nb",
+   "case": "pll-Nb",
+   "algs": [
+    "r D r' U2 r D r' U2 r D r' U2 r D r' U2 r D r' U2",
+    "r D' r' U2 r D' r' U2 r D' r' U2 r D' r' U2 r D' r' U2",
+    "l D l' U2 l D l' U2 l D l' U2 l D l' U2 l D l' U2",
+    "l D' l' U2 l D' l' U2 l D' l' U2 l D' l' U2 l D' l' U2",
+    "R' U r' F2 R F' M' U r' F2 R F' r U",
+    "R' U R U' R' F' U' F R U R' F R' F' R U' R",
+    "R' U R U' R' F' U' F R U R' U' R U' f R f'",
+    "R' U L' U2 R U' L R' U L' U2 R U' L U",
+    "z D' R U' R2' D R' U D' R U' R2' D R' U z'",
+    "B R' U' R U R B' R2' B' U R U R' U' B R",
+    "x' U R' F' R F R U' R2' U' F R F R' F' U R x",
+    "R' B' U R U' R' U' B R2 B R' U' R' U R B'",
+    "x' R' U' F R F' R' F' U R2' U R' F' R' F R U' x",
+    "z U' F' R U R' U' R' F U2' F U' R' U' R U F' z'",
+    "z B' U' R B R' B' R' U B2' U B' R' B' R B U' z'",
+    "z F U' R' U R U F' U2 F' R U R U' R' F U z'",
+    "z D' R U' R2 D R' U D' R U' R2 D R' U z'",
+    "z U' R D' R2' U R' D U' R D' R2' U R' D z'",
+    "z U' R D' R2 U R' D U' R D' R2 U R' D z'",
+    "z U' R2 U R U R' F' R U R' U' R' F R2 U' R' U2 R2 U z'",
+    "L' U R' d2 R U' L R' U L' U2 l F' r",
+    "r' D' F r U' r' F' D r2 U r' U' r' F r F'",
+    "R2 D R' U R D' R2 U' R U' R' U' F R U R' U' R' F' R",
+    "R U' R2 F2 U' R F2 R' U F2 R2 U R'",
+    "L U' L2' B2' U' L B2' L' U B2' L2' U L'",
+    "L' B' L R D L' B' L D' R' U B' U' B U B",
+    "F' U B' U' U' F U' S R B' R' R' F R' B z'"
+   ],
+   "group": "Nb Permutation"
+  },
+  {
+   "name": "Ra",
+   "case": "pll-Ra",
+   "algs": [
+    "y' R U' R' U' R U R D R' U' R D' R' U2 R'",
+    "y' R U R' F' R U2 R' U2 R' F R U R U2 R' U'",
+    "R U2 R' U2 R B' R' U' R U R B R2 U",
+    "R U2 R' U2 R B' R' U' R U l U R2 x",
+    "y2 z U R2 U' R2 U F' U' R' U R U F U2 z'",
+    "y2 L U2 L' U2 L F' L' U' L U L F L2",
+    "y' R2 B' R' U' R' U R B R' U2 R U2 R'",
+    "y L2 F' L' U' L' U L F L' U2 L U2 L'",
+    "F2 R' F' U' F' U F R F' U2 F U2 F'",
+    "y' x' R2 U' l' U' R' U l U l' U2 R U2 R'",
+    "y' R l U' l' U' R' U l U l' U2 R U2' R'",
+    "F2 L2 U F U F' U' F' U' L2 F' U F' U'",
+    "R U' R F2 U R U R U' R' U' F2 R2 U",
+    "y' R2 F2 U R U R' U' R' U' F2 R' U R'",
+    "R U2 R' U' R' F' R U2 R U2 R' F R U' R' U",
+    "y F U2 F' U R B' R' F R B R' U F'",
+    "y F U2 S R B' D' F R2 F2 R' F D z'",
+    "y' F U U F' U R B' R' F R B R' U F'",
+    "y' F U B' D B U B' D' S R F R F' z'"
+   ],
+   "group": "Ra Permutation"
+  },
+  {
+   "name": "Rb",
+   "case": "pll-Rb",
+   "algs": [
+    "R' U2 R U2 R' F R U R' U' R' F' R2' U'",
+    "y' L' U' L F L' U2 L U2 L F' L' U' L' U2 L U",
+    "R' U2 R U2 R' F R U R' U' l' U' R2 x'",
+    "z' U' L2 U L2 U' F U L U' L' U' F' U2 z",
+    "R' U2 R U2 R' F R U R' U' R' F' R2",
+    "R' U2 R' D' R U' R' D R U R U' R' U' R",
+    "y' R U2 R' U2 R' F R2 U' R' U' R U R' F' R U R' U R U2 R'",
+    "y R2 F R U R U' R' F' R U2 R' U2 R",
+    "y x R2 U l U R U' l' U' l U2 R' U2 R",
+    "y' r' L' U r U L U' r' U' r U2 L' U2 L",
+    "y2 L' U2 L U L F L' U2 L' U2 L F' L' U L U'",
+    "y R2 F2 R F2 U R U2 L' U' M' B2 R x'",
+    "y R' U R U R' L D' L' U L D L' U R",
+    "y R' U R U M' F' L' B L F L' B R x'"
+   ],
+   "group": "Rb Permutation"
+  },
+  {
+   "name": "T",
+   "case": "pll-T",
+   "algs": [
+    "R U R' U' R' F R2 U' R' U' R U R' F'",
+    "F R U' R' U R U R2 F' R U R U' R'",
+    "R U R' U' R' F R2 U' R' U F' L' U L",
+    "R2 U R2 U' R2 U' D R2 U' R2 U R2 D'",
+    "y2 L' U' L U L F' L2 U L U L' U' L F",
+    "y F2 U' F2 D R2 B2 U B2 D' R2",
+    "y F' U' F B' R' U R F' U F R' U' R B",
+    "y F' U' S' U' L U F' L F U' L' U B z"
+   ],
+   "group": "T Permutation"
+  },
+  {
+   "name": "Ua",
+   "case": "pll-Ua",
+   "algs": [
+    "R U R' U R' U' R2 U' R' U R' U R",
+    "U2 M2' U M U2 M' U M2'",
+    "U2 R U' R U R U R U' R' U' R2",
+    "U R2 U' S' U2' S U' R2",
+    "B2 U' R L' B2 R' L U' B2",
+    "B2 U' M U2 M' U' B2",
+    "R U B U' B' R' L' B' U' B U L",
+    "R' F' M' F U F' M F U' R"
+   ],
+   "group": "Ua Permutation"
+  },
+  {
+   "name": "Ub",
+   "case": "pll-Ub",
+   "algs": [
+    "R' U R' U' R' U' R' U R U R2",
+    "U2 M2 U' M U2 M' U' M2",
+    "U2 R2' U R U R' U' R' U' R' U R'",
+    "U R2 U' S R2' S' R2 U R2'",
+    "B2' U L' R B2' L R' U B2'",
+    "B2' U M U2' M' U B2'",
+    "L' U' B' U B L R B U B' U' R'",
+    "L F M' F' U' F M F' U L'"
+   ],
+   "group": "Ub Permutation"
+  },
+  {
+   "name": "V",
+   "case": "pll-V",
+   "algs": [
+    "y R U' R U R' D R D' R U' D R2 U R2 D' R2",
+    "y R' U R' U' R D' R' D R' U D' R2 U' R2' D R2",
+    "R' U R U' R' f' U' R U2 R' U' R U' R' f R",
+    "R' f' R U R' U R U2 R' U f R U R' U' R",
+    "R' U R' U' B' R' B2 U' B' U B' R B R",
+    "R' U R' d' R' F' R2 U' R' U R' F R F",
+    "R' U R' U' y R' F' R2 U' R' U R' F R F",
+    "y2 z U' R U' R' F' U' F2 l' U' l F' U F U z' y2'",
+    "y2 x R U R U' B U' B' U2' R' U' B' R' B R' x' y2'",
+    "R' U R' U' B' l' x2' y' U2 R' U' R y U' R U R x",
+    "z D' R2 D R2 U R' D' R U' R U R' D R U'",
+    "R U2 R' D R U' R U' R U R2 D R' U' R D2",
+    "R' U R' U' R D' R' D R' U D' R2 U' R2 D R2",
+    "y' F' U F' U' R' F' R2 U' R' U R' F R F",
+    "R2' D' R2 U R2' U' D R D' R D R' U R U' R",
+    "x' R' F R F' U R U2 R' U' R U' R' U2 R U R' U'",
+    "R' U R' U' B' D B' D' B2 R' B' R B R",
+    "R' U R' U' B' D B' D' B B R' B' R B R"
+   ],
+   "group": "V Permutation"
+  },
+  {
+   "name": "Y",
+   "case": "pll-Y",
+   "algs": [
+    "R' U' R U' L R U2 R' U' R U2 L' U R2 U R",
+    "F R U' R' U' R U R' F' R U R' U' R' F R F'",
+    "R2 U' R' U R U' x D' R' U R' U' R' D R",
+    "F R' F R2 U' R' U' R U R' F' R U R' U' F'",
+    "R' U' R F2 R' U R d R2 U' R2' U' R2",
+    "R2 U' R2 U' R2 U R' F' R U R2 U' R' F R",
+    "R2 U' R2 U' R2 d R U R' B2 R U' R'",
+    "R2 U' R2 U' R2 U y' R U R' B2 R U' R'",
+    "F2 D R2 U R2 D' R' U' R F2 R' U R",
+    "y' R2 u R2' U R2 D' R' U' R F2' R' U R",
+    "R U R' U' R' F R F' R U R' U' R' F R2 U' R' U R U R' F'",
+    "R2' U' R2 U' R2' U R2 D' R2' U R2 U' R2' D R2",
+    "R2 U' R2 U' R2 U F U F' R2 F U' F'"
+   ],
+   "group": "Y Permutation"
+  },
+  {
+   "name": "Z",
+   "case": "pll-Z",
+   "algs": [
+    "U M' U M2' U M2' U M' U2 M2'",
+    "M2' U M2' U M' U2 M2' U2 M'",
+    "M2' U2 M U M2' U M2' U M",
+    "R' U' R U' R U R U' R' U R U R2 U' R'",
+    "R L' U2 D2 R L' D' R2 L2 U F2 B2",
+    "M S2 M' D' M2 D S2",
+    "R B' R' F B R' F B' R' B R F F",
+    "M S' S' M' D M' M' D' S' S'"
+   ],
+   "group": "Z Permutation"
+  }
+ ]
 }

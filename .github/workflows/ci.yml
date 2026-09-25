@@ -48,8 +48,8 @@ jobs:
       - name: Install kociemba
         run: python3 -m pip install kociemba
 
-      - name: py_compile python tools (mcp_bridge + wca_scramble)
-        run: python3 -m py_compile tools/mcp_bridge.py tools/wca_scramble.py
+      - name: py_compile python tools (mcp_bridge + wca_scramble + rebuild_cfop)
+        run: python3 -m py_compile tools/mcp_bridge.py tools/wca_scramble.py tools/rebuild_cfop.py
 
       # 打乱按钮 3 阶 WCA 路径的子进程依赖直跑验证(早于任何 GDScript 测试暴露语法/运行错误)
       - name: WCA scramble generator direct run

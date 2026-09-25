@@ -1,6 +1,9 @@
-# 上游许可确认 issue(A-2,2026-09-25 用户裁决:发 issue 确认)
+# 上游许可确认 issue(A-2,2026-09-25)
 
-发给:[lukejacksonn/cube → New issue](https://github.com/lukejacksonn/cube/issues/new)
+**状态更新(2026-09-25)**:用户裁决直接走备选路径——已用 `tools/rebuild_cfop.py` 从
+speedsolving wiki 社区公共算法表重录替换 `data/cfop.json`(119 case / 614 条公式,
+全部经引擎数学验证),上游许可依赖已消除,**本 issue 无需发送**。
+以下文本保留备用:若日后想礼貌性地通知上游其 LICENSE 缺失,仍可用。
 
 ## 标题
 

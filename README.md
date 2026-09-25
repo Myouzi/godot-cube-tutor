@@ -67,12 +67,12 @@ env DISPLAY=:0 godot --rendering-driver opengl3 -s tests/visual_test.gd
 
 ## 数据来源
 
-- **来源仓库**:[lukejacksonn/cube](https://github.com/lukejacksonn/cube),文件 `src/algorithms.ts`
-- **抓取 URL**:https://raw.githubusercontent.com/lukejacksonn/cube/master/src/algorithms.ts(master 分支,2026-09-24 抓取)
-- **用途**:离线打包为 `data/cfop.json`(F2L 41 / OLL 57 / PLL 21,共 119 case、214 条公式),供 P4 CFOP 案例训练离线运行
-- **处理方式**:仅做结构化(TS 数组 → JSON,`moves` 改名 `algs`,每条附加 `case` 唯一标识),数据本身不增删改;`probability` 字段按源数据原样保留
+- **来源**:speedsolving.com wiki 社区公共算法表([OLL](https://www.speedsolving.com/wiki/index.php/OLL)、[First Two Layers](https://www.speedsolving.com/wiki/index.php/First_Two_Layers)、[PLL](https://www.speedsolving.com/wiki/index.php/PLL) 页,2026-09-25 经 MediaWiki API 抓取)
+- **重收集方式**:`tools/rebuild_cfop.py`(可复现,含缓存)逐条收集公式,展开重复记号 `(seq)N`、宽转双记号归一(`Rw`→`r`)、`X3`→`X'`,丢弃不可转换 3 条(wiki 原文坏数据:`Rw')` 未闭合、`FR'` 连写缺空格)
+- **结构与规模**:`data/cfop.json` = f2l 41(wiki 原编号,37 号标 Solved 跳过)/ oll 57 / pll 21,共 119 case、614 条公式(引擎消费 `algs[0]`/`name`/`group`);全部 614 条经引擎数学验证(逆构造→正序复原)
+- **许可立场**:公式序列本身是社区公共知识(操作事实,不受版权保护);本文件的数据编排与结构为本项目自有,无上游编排依赖。历史注记:2026-09-25 前的版本打包自 lukejacksonn/cube `src/algorithms.ts`(119 case/214 条),因该仓库无 LICENSE 文件已整体替换
 
 ## 许可
 
 - **本项目代码**:GPL-3.0(见 [LICENSE](LICENSE),2026-09-25 定稿)。选择 GPL 系使未来可合法并入同为 GPL 的上游实现(hkociemba、min2phase 的 GPLv3 侧、cstimer 等),代价是衍生作品须同许可开源。
-- **上游数据**:`data/cfop.json` 来自 lukejacksonn/cube 仓库,该仓库**未附任何开源许可**(根目录无 LICENSE 文件,GitHub API license 检测为 null,`package.json` 亦无 license 字段,2026-09-24 核实),仅 README 文字声明 MIT。该数据文件作为独立的数据打包保留其来源与限制声明,不随本仓库 LICENSE 主张或授予权利;已向上游发起许可确认(issue 文本见 `docs/upstream-license-issue.md`),无果将以社区通用公式集重录替换。
+- **CFOP 数据**:`data/cfop.json` 由 `tools/rebuild_cfop.py` 从 speedsolving wiki 社区公共算法表重收集(公式序列为操作事实,编排为本项目自有,见「数据来源」节),无上游许可依赖。

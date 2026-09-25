@@ -14,6 +14,11 @@
 - **`:=` 对 Variant 推断失败是 parse error 而非运行时错**:`@onready var cube = $CubeRoot`(无类型标注)后写 `var base := 1.7 * cube.n + 2.0`,`cube.n` 是 Variant,整个脚本加载失败。症状极具迷惑性——场景实例退化成无脚本的基类节点(如 Node3D),运行时报 `Nonexistent function 'xxx' in base 'Node3D'`,而函数明明存在于源码。对策:涉及无类型变量的表达式用显式类型标注(`var base: float = ...`)。
 - **SceneTree 测试"退出码末尾统一判定"会假绿**:`_run()` 协程中途 SCRIPT ERROR 会终止协程、后续断言全部不执行,但已排队的 `quit(0)` 照常执行 → `ALL PASSED` + exit 0 的假象。回归判定必须同时校验 exit code 与日志中无 `SCRIPT ERROR`(如 `grep -c "SCRIPT ERROR"`)。
 
+## CI 与自动化(GitHub Actions)
+- headless E2E 等 `_process` 边沿的断言必须**轮询等条件**(上限 60 帧),固定「等 2 帧」在 CI 慢 runner 上时序 flaky(2026-09-25 首跑实证:本地干净 clone 10 测全过、同测试 30 连跑全过、119 case 全量探针全过,CI 仍挂);否定性断言(「不入账」)给 10 帧观察窗,窗口过小会假绿。
+- 公开仓库的 Actions 诊断:`runs/{id}/logs` 与日志网页均需认证,jobs API 匿名只给 conclusion;`::error` **annotation 免认证可读**——CI 设计成失败时把输出尾部塞进 annotation 文本,当场定位根因,不用求 token。
+- git push 走 SSH over 443(`~/.ssh/config`:`Host github.com → HostName ssh.github.com → Port 443`);https 无缓存凭证时免交互直接失败,配一次密钥永久免密。
+
 ## 渲染争议仲裁
 - 多模态模型逐格读 3D 透视截图**不可靠**:同一张魔方截图三次独立读数互相矛盾,甚至出现"中心块变色"级幻觉;多轮读图对质无意义。
 - "渲染 vs 逻辑"争议用像素级探针确定性裁决(已留在仓库):`tests/sticker_probe.gd` 从游戏内导出每个朝向相机贴纸的屏幕投影坐标+预期 albedo → `tools/probe_pixels.py` 采样 PNG 像素做最近色分类比对,100% 匹配即渲染正确。
@@ -23,4 +28,5 @@
 - 游戏内 TCP 服务器端口被旧实例占用时按规格降级继续运行,桥连上的可能是**旧进程**(缺新命令)→ 冒烟测试报 unknown cmd。先 `pgrep -af godot` + 查 8788,kill 旧运行实例(`--editor` 编辑器本体不监听,别误杀)。
 - 本机 nc 是 OpenBSD 变体(Debian 1.234),没有 `-q`;TCP 半关收尾用 `timeout 3 nc -N`。
 - PyPI 直连被重置(ConnectionResetError 104),pip 装包走清华镜像:`-i https://pypi.tuna.tsinghua.edu.cn/simple`。
-- GitHub 主站超时,但 `raw.githubusercontent.com` / `api.github.com` / `codeload.github.com` 直连可用;clone 换 codeload tar.gz 或镜像站。
+- GitHub 主站超时,但 `raw.githubusercontent.com` / `api.github.com` / `codeload.github.com` 直连可用;clone 换 codeload tar.gz 或镜像站。(2026-09-25 复测:主站恢复可达;push 仍走 SSH 443 更稳。)
+- MediaWiki `api.php?action=parse&prop=wikitext` 对 Python urllib 默认 UA 返回 403,须自定义 User-Agent;拿 wikitext 源码比抓网页 HTML 稳(模板 `{{case}}`/`{{Alg}}` 可直接正则解析)。

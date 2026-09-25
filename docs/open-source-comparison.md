@@ -235,4 +235,4 @@ UDLRFB+'+2、n≥4 宽转、M E S/x y z、双通道播放,在 cstimer/cubing.js 
 ### 交付状态盘点(2026-09-25,随实施轮维护)
 
 - **已交付**:A-3(CI:`.github/workflows/ci.yml` 跑全部 headless 测试 + py_compile + WCA 生成器直跑 + smoke_bridge)、A-4(WCA 均匀打乱从计时模式推广到自由/训练模式,README 功能节同步)、A-5(公式播放速度滑杆 0.05~0.90 s/步)、A-6(打乱种子化:`cube_scramble` 可选 (seed, steps)、`cube_scramble_wca` 可选 seed,均端到端断言可复现)、A-8(每案例统计**简版**:次数/best/mean——出现率与跨案例统计表两项未实现,取舍声明见 `scripts/main.gd` `_update_train_stat` 注释)。
-- **决策后更新(2026-09-25)**:A-1 **已交付**——项目所有者裁决 GPL-3.0,`LICENSE` 已就位(README「许可」节同步);A-2 **已完成**——项目所有者裁决走备选「社区通用公式集重录」:`data/cfop.json` 已由 `tools/rebuild_cfop.py` 从 speedsolving wiki 公共算法表重收集替换(119 case / 614 条公式,全量数学验证),上游许可依赖消除,向上游发 issue 确认不再必要。A-7(facelet 导入通道——成本中高)仍未排期。
+- **决策后更新(2026-09-25)**:A-1 **已交付**——项目所有者裁决 GPL-3.0,`LICENSE` 已就位(README「许可」节同步);A-2 **已完成**——项目所有者裁决走备选「社区通用公式集重录」:`data/cfop.json` 已由 `tools/rebuild_cfop.py` 从 speedsolving wiki 公共算法表重收集替换(119 case / 614 条公式,全量数学验证),上游许可依赖消除,向上游发 issue 确认不再必要。A-7(facelet 导入通道)——**项目所有者裁决暂不做(2026-09-25)**,需求出现时再启动。至此附录 A 八项全部闭环:A-1~A-6、A-8 已交付,A-7 明示搁置。

@@ -140,8 +140,10 @@ func _test_ui() -> void:
 	var steps: Array = main._cfop_steps(String(main._train_case.algs[0]))
 	for s in steps:
 		main.cube.apply_turn(s.axis, s.layers, s.angle)
-	await process_frame
-	await process_frame
+	for i in 60:  # 轮询而非固定 2 帧:CI 慢 runner 上 _process 边沿可能迟到(首跑 flaky 实证)
+		if main._train_done:
+			break
+		await process_frame
 	_check(main._train_done == true, "E2E 完成边沿已触发(_train_done=true)")
 	_check(int(main._train_stats.stats(id2).count) == before + 1,
 			"E2E 完成自动入账(count %d→%d,未经手动 record)" % [before, before + 1])
@@ -161,8 +163,10 @@ func _test_ui() -> void:
 	var steps2: Array = main._cfop_steps(String(main._train_case.algs[0]))
 	for s in steps2:  # 正序 apply_turn 瞬时复原(玩家语义计步,moves>0)
 		main.cube.apply_turn(s.axis, s.layers, s.angle)
-	await process_frame
-	await process_frame
+	for i in 60:  # 轮询等边沿(同 E2E:CI 慢 runner 固定帧数不可靠)
+		if main._train_done:
+			break
+		await process_frame
 	_check(int(main._train_stats.stats(id_frozen).count) == 1,
 			"切分类后完成记到出题分类(%s)" % id_frozen)
 	_check(int(main._train_stats.stats("oll/%s" % main._case_name(main._train_case)).count) == 0,
@@ -175,8 +179,8 @@ func _test_ui() -> void:
 	var before3: int = int(main._train_stats.stats(id3).count)
 	main.server.cube = main.cube  # dispatch 直测,不等 _autodiscover(同 test_scramble_ui)
 	main.server.dispatch({"id": 0, "cmd": "reset"})
-	await process_frame
-	await process_frame
+	for i in 10:  # 否定性断言:给 _process 足够(但有限)帧窗去「错误地」入账,窗口过小会假绿
+		await process_frame
 	_check(main.cube.is_solved(), "防护②MCP reset 后已复原(场景成立)")
 	_check(int(main._train_stats.stats(id3).count) == before3,
 			"MCP reset 造成的复原跳变不入账(净玩家步 0,不产伪成绩)")

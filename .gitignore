@@ -1,0 +1,12 @@
+# Godot 4 缓存
+.godot/
+
+# Python
+__pycache__/
+*.pyc
+
+# 截图/输出
+out/
+
+# 工作区内部文件
+.zcode/

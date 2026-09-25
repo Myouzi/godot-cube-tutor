@@ -1,0 +1,83 @@
+# 本地已实测命令本身;Actions 编排未验证(本工作区非 git 仓库,无法本地触发 Actions)。
+# 语法按最保守常见写法:push/pull_request 触发、ubuntu-latest、单 job、checkout + 缓存。
+# 口径依据:命令清单来自 README「测试」节;双校验(exit code 0 且输出无 SCRIPT ERROR)
+# 来自 EXPERIENCE.md 的退出码假绿陷阱条目;smoke_bridge 用 --port=18925 隔离端口,
+# 避让开发机常驻游戏实例的默认 8788。
+# 视觉测试(visual_test / sticker_probe)需要 X 会话与真渲染,不在 CI 跑。
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GODOT_VERSION: 4.7.2-stable  # 与本地实测同一版本(4.7.2.stable.official)
+    steps:
+      - uses: actions/checkout@v4
+
+      # 官方 Linux 二进制仅动态链接 libc 系(ldd 实测);X11/GL 由引擎按需 dlopen,
+      # headless(dummy display)不加载,无需 apt 装运行库。
+      - name: Cache Godot binary
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}-linux-x86_64
+
+      - name: Download Godot ${{ env.GODOT_VERSION }} (official GitHub release)
+        run: |
+          mkdir -p "$HOME/godot"
+          cd "$HOME/godot"
+          if [ ! -x godot ]; then
+            curl -L --fail -o godot.zip \
+              "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+            unzip -o godot.zip
+            mv "Godot_v${GODOT_VERSION}_linux.x86_64" godot
+            chmod +x godot
+          fi
+          echo "$HOME/godot" >> "$GITHUB_PATH"
+
+      # test_scramble_ui / test_timer 的 3 阶路径硬断言走 WCA 均匀打乱(kociemba 缺失会
+      # 降级随机步而 FAIL);smoke_bridge 的 cube_solve_optimal / cube_scramble_wca 段同样依赖 kociemba。
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install kociemba
+        run: python3 -m pip install kociemba
+
+      - name: py_compile python tools (mcp_bridge + wca_scramble)
+        run: python3 -m py_compile tools/mcp_bridge.py tools/wca_scramble.py
+
+      # 打乱按钮 3 阶 WCA 路径的子进程依赖直跑验证(早于任何 GDScript 测试暴露语法/运行错误)
+      - name: WCA scramble generator direct run
+        run: |
+          set -eo pipefail
+          python3 tools/wca_scramble.py | grep -q '"ok": true'
+
+      # 与 README「测试」节逐条一致(每条命令已在本地逐条实测通过)。
+      - name: Headless GDScript tests (双校验:exit code + 无 SCRIPT ERROR)
+        run: |
+          set -uo pipefail
+          fail=0
+          for t in self_test test_drag test_lbl test_scramble test_scramble_ui \
+                   test_server test_timer test_train_stats test_view test_wide; do
+            echo "::group::godot --headless -s tests/${t}.gd"
+            log="/tmp/${t}.log"
+            if godot --headless -s "tests/${t}.gd" 2>&1 | tee "$log"; then
+              if grep -q "SCRIPT ERROR" "$log"; then
+                echo "::error::${t}: exit 0 但输出含 SCRIPT ERROR(假绿陷阱)"
+                fail=1
+              fi
+            else
+              echo "::error::${t}: exit code 非 0"
+              fail=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $fail
+
+      - name: Bridge end-to-end smoke (隔离端口 18925)
+        run: python3 tests/smoke_bridge.py --port=18925

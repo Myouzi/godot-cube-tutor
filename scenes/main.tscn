@@ -1,0 +1,370 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/cube.gd" id="2_cube"]
+[ext_resource type="Script" path="res://scripts/cube_server.gd" id="3_server"]
+
+[sub_resource type="Environment" id="Environment_env"]
+background_mode = 1
+background_color = Color(0.12, 0.13, 0.15, 1)
+ambient_light_source = 2
+ambient_light_color = Color(1, 1, 1, 1)
+ambient_light_energy = 0.6
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_mode"]
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_train"]
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_env")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, 0, -0.5, -0.353553, 0.707107, -0.612372, 0.353553, 0.707107, 0.612372, 0, 0, 0)
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(0.707107, 0.408248, -0.57735, 0, 0.816497, 0.57735, 0.707107, -0.408248, 0.57735, 4.099, 4.099, 4.099)
+fov = 45.0
+
+[node name="CubeRoot" type="Node3D" parent="."]
+script = ExtResource("2_cube")
+
+[node name="CubeServer" type="Node" parent="."]
+script = ExtResource("3_server")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="TopBar" type="HBoxContainer" parent="UI"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = 60.0
+theme_override_constants/separation = 8
+
+[node name="ModeFree" type="Button" parent="UI/TopBar"]
+custom_minimum_size = Vector2(72, 0)
+	theme_override_font_sizes/font_size = 18
+layout_mode = 2
+toggle_mode = true
+button_pressed = true
+button_group = SubResource("ButtonGroup_mode")
+text = "自由"
+
+[node name="ModeTeach" type="Button" parent="UI/TopBar"]
+custom_minimum_size = Vector2(72, 0)
+	theme_override_font_sizes/font_size = 18
+layout_mode = 2
+toggle_mode = true
+button_group = SubResource("ButtonGroup_mode")
+text = "教学"
+
+[node name="ModeTimer" type="Button" parent="UI/TopBar"]
+custom_minimum_size = Vector2(72, 0)
+	theme_override_font_sizes/font_size = 18
+layout_mode = 2
+toggle_mode = true
+button_group = SubResource("ButtonGroup_mode")
+text = "计时"
+
+[node name="ModeTrain" type="Button" parent="UI/TopBar"]
+custom_minimum_size = Vector2(72, 0)
+	theme_override_font_sizes/font_size = 18
+layout_mode = 2
+toggle_mode = true
+button_group = SubResource("ButtonGroup_mode")
+text = "训练"
+
+[node name="ScrambleBtn" type="Button" parent="UI/TopBar"]
+custom_minimum_size = Vector2(72, 0)
+	theme_override_font_sizes/font_size = 18
+layout_mode = 2
+text = "打乱"
+
+[node name="UndoBtn" type="Button" parent="UI/TopBar"]
+custom_minimum_size = Vector2(72, 0)
+	theme_override_font_sizes/font_size = 18
+layout_mode = 2
+text = "撤销"
+
+[node name="ResetBtn" type="Button" parent="UI/TopBar"]
+custom_minimum_size = Vector2(72, 0)
+	theme_override_font_sizes/font_size = 18
+layout_mode = 2
+text = "重置"
+
+[node name="NBtn" type="Button" parent="UI/TopBar"]
+custom_minimum_size = Vector2(72, 0)
+	theme_override_font_sizes/font_size = 18
+layout_mode = 2
+text = "3 阶"
+
+[node name="NMenu" type="PopupMenu" parent="UI/TopBar/NBtn"]
+
+[node name="AlgEdit" type="LineEdit" parent="UI/TopBar"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+placeholder_text = "R U R' U'"
+
+[node name="PlayBtn" type="Button" parent="UI/TopBar"]
+custom_minimum_size = Vector2(72, 0)
+	theme_override_font_sizes/font_size = 18
+layout_mode = 2
+text = "播放"
+
+[node name="SpeedSlider" type="HSlider" parent="UI/TopBar"]
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+size_flags_vertical = 4
+min_value = 0.05
+max_value = 0.9
+step = 0.01
+value = 0.18
+
+[node name="SpeedLabel" type="Label" parent="UI/TopBar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+vertical_alignment = 1
+text = "0.18 s/步"
+
+[node name="ViewResetBtn" type="Button" parent="UI/TopBar"]
+custom_minimum_size = Vector2(72, 0)
+	theme_override_font_sizes/font_size = 18
+layout_mode = 2
+text = "回正"
+
+[node name="StatusLabel" type="Label" parent="UI"]
+offset_left = 12.0
+offset_top = 68.0
+offset_right = 700.0
+offset_bottom = 80.0
+theme_override_font_sizes/font_size = 18
+text = "已还原 ✓ · 步数 0"
+
+[node name="TimeLabel" type="Label" parent="UI"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 72.0
+offset_right = 200.0
+offset_bottom = 116.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 44
+horizontal_alignment = 1
+mouse_filter = 2
+text = "0:00.000"
+
+[node name="TeachPanel" type="PanelContainer" parent="UI"]
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -232.0
+offset_top = 68.0
+offset_right = -8.0
+offset_bottom = -44.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="UI/TeachPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="UI/TeachPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "教学进度(层先法)"
+
+[node name="Stage0" type="Label" parent="UI/TeachPanel/VBox"]
+layout_mode = 2
+text = "1. 白十字"
+
+[node name="Stage1" type="Label" parent="UI/TeachPanel/VBox"]
+layout_mode = 2
+text = "2. U 层四角"
+
+[node name="Stage2" type="Label" parent="UI/TeachPanel/VBox"]
+layout_mode = 2
+text = "3. 中层四棱"
+
+[node name="Stage3" type="Label" parent="UI/TeachPanel/VBox"]
+layout_mode = 2
+text = "4. D 面十字"
+
+[node name="Stage4" type="Label" parent="UI/TeachPanel/VBox"]
+layout_mode = 2
+text = "5. D 面全黄"
+
+[node name="Stage5" type="Label" parent="UI/TeachPanel/VBox"]
+layout_mode = 2
+text = "6. D 层角位"
+
+[node name="Stage6" type="Label" parent="UI/TeachPanel/VBox"]
+layout_mode = 2
+text = "7. D 层棱位"
+
+[node name="TipLabel" type="Label" parent="UI/TeachPanel/VBox"]
+layout_mode = 2
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 14
+text = ""
+
+[node name="HintLabel" type="Label" parent="UI/TeachPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 14
+text = ""
+
+[node name="BtnRow" type="HBoxContainer" parent="UI/TeachPanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="DemoBtn" type="Button" parent="UI/TeachPanel/VBox/BtnRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "演示下一步"
+
+[node name="AutoBtn" type="Button" parent="UI/TeachPanel/VBox/BtnRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "自动完成本阶段"
+
+[node name="TimerPanel" type="PanelContainer" parent="UI"]
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -232.0
+offset_top = 68.0
+offset_right = -8.0
+offset_bottom = -44.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="UI/TimerPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="UI/TimerPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "计时成绩"
+
+[node name="ScrambleTip" type="Label" parent="UI/TimerPanel/VBox"]
+layout_mode = 2
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "打乱后转动第一下自动开始计时,复原瞬间停表。"
+
+[node name="ScrambleSeq" type="Label" parent="UI/TimerPanel/VBox"]
+layout_mode = 2
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 14
+text = ""
+
+[node name="StatLabel" type="Label" parent="UI/TimerPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = ""
+
+[node name="HistoryLabel" type="Label" parent="UI/TimerPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+valign = 0
+theme_override_font_sizes/font_size = 14
+text = ""
+
+[node name="TrainPanel" type="PanelContainer" parent="UI"]
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -232.0
+offset_top = 68.0
+offset_right = -8.0
+offset_bottom = -44.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="UI/TrainPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="UI/TrainPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "CFOP 训练"
+
+[node name="CatRow" type="HBoxContainer" parent="UI/TrainPanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="F2LBtn" type="Button" parent="UI/TrainPanel/VBox/CatRow"]
+layout_mode = 2
+toggle_mode = true
+button_pressed = true
+button_group = SubResource("ButtonGroup_train")
+text = "F2L"
+
+[node name="OLLBtn" type="Button" parent="UI/TrainPanel/VBox/CatRow"]
+layout_mode = 2
+toggle_mode = true
+button_group = SubResource("ButtonGroup_train")
+text = "OLL"
+
+[node name="PLLBtn" type="Button" parent="UI/TrainPanel/VBox/CatRow"]
+layout_mode = 2
+toggle_mode = true
+button_group = SubResource("ButtonGroup_train")
+text = "PLL"
+
+[node name="NewCaseBtn" type="Button" parent="UI/TrainPanel/VBox"]
+layout_mode = 2
+text = "随机出题"
+
+[node name="CaseLabel" type="Label" parent="UI/TrainPanel/VBox"]
+layout_mode = 2
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 14
+text = ""
+
+[node name="TrainStatLabel" type="Label" parent="UI/TrainPanel/VBox"]
+layout_mode = 2
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 14
+text = ""
+
+[node name="AlgLabel" type="Label" parent="UI/TrainPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 14
+text = ""
+
+[node name="ShowBtn" type="Button" parent="UI/TrainPanel/VBox"]
+layout_mode = 2
+text = "演示主公式"
+
+[node name="ResultLabel" type="Label" parent="UI/TrainPanel/VBox"]
+layout_mode = 2
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 14
+text = ""
+
+[node name="HelpLabel" type="Label" parent="UI"]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -36.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 14
+text = "U D L R F B 转层 · Shift 反向 · Alt+字母 宽转(4 阶以上) · 左键命中拖层/未命中转视角 · Esc 退出"
+horizontal_alignment = 1

@@ -58,6 +58,8 @@ jobs:
           python3 tools/wca_scramble.py | grep -q '"ok": true'
 
       # 与 README「测试」节逐条一致(每条命令已在本地逐条实测通过)。
+      # 失败时把 log 中的 FAIL/ERROR 行尾部带入 ::error annotation(匿名 check-runs API
+      # 可读)——公开仓库日志网页需登录渲染,annotation 是免认证的失败详情通道。
       - name: Headless GDScript tests (双校验:exit code + 无 SCRIPT ERROR)
         run: |
           set -uo pipefail
@@ -68,11 +70,11 @@ jobs:
             log="/tmp/${t}.log"
             if godot --headless -s "tests/${t}.gd" 2>&1 | tee "$log"; then
               if grep -q "SCRIPT ERROR" "$log"; then
-                echo "::error::${t}: exit 0 但输出含 SCRIPT ERROR(假绿陷阱)"
+                echo "::error::${t}: exit 0 但输出含 SCRIPT ERROR(假绿陷阱)tail: $(grep -E 'SCRIPT ERROR|FAIL|ERROR' "$log" | tail -6 | tr '\n' '|' | cut -c1-400)"
                 fail=1
               fi
             else
-              echo "::error::${t}: exit code 非 0"
+              echo "::error::${t}: exit code 非 0 tail: $(tail -20 "$log" | tr '\n' '|' | cut -c1-600)"
               fail=1
             fi
             echo "::endgroup::"

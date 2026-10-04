@@ -41,6 +41,7 @@
 - **落地形态**：tests/test_server.gd `_test_nxn_protocol_all()`（tests/test_server.gd:179）+ 新增类常量 `S9_DEGRADE_MARK="(降级)"`（tests/test_server.gd:19）。n=2/5/6/7 四点采样（3/4 阶由既有 S1/S3 覆盖，未动）：每阶按 intent 依次试 seed 20261004+n / +100 / +200——第一个 solve ok:true 的 seed 断言完整结构（alg 非空、stages 恰 9 段（n=2 为 3 段）、每段 {name,alg}）后 break；ok:false 的 seed 断言 error 含降级标记，并以 PASS 行打印完整降级原因（fail loud；非降级失败如「parity 修正循环…仍存在(fail loud)」scripts/nxn_solver.gd:3079、「约化 3 阶段: …」scripts/nxn_solver.gd:3084 不含该标记，照旧 FAIL 不被掩饰）。hint 断言（ok:true、stage∈0..9、progress、suggestion 三键、error 空时 alg 非空/非空时 PASS 降级行）固定在第一个 seed 的状态上（重 setup+scramble 对齐）；尾部 `_cube.setup(3)` 清理。scripts/ 零改动。
 - **F5 裁决依据**（为何不是"两端采样 n=2/n=7 + 5/6 同构假设"）：PARITY_ALGS[6] 与 5 阶奇数阶口径此前**无任何 server 级断言**，"两端同构"不成立——6 阶偶数阶 parity 路径与 5/7 阶奇数阶口径各有独立分支，必须实点覆盖。也未按原设想搭金标准车：金标准循环是 84s 预算的耗时大头，且其 seed 不可控；协议断言落 test_server 可控 seed 独立采样，与求解循环解耦。实测注记：5-7 阶打乱态 solve 全部走降级熔断（9 seed 无一全解，2026-10-04 探针实测），降级分支是主路径而非兜底；5-7 阶打乱态 hint 的 error 为空（`_cn_hint` 首宏可生成，scripts/nxn_solver.gd:2212 起只在段生成为空时才带 error），S9 hint 空分支被真实覆盖。
 - **验证**：`godot --headless -s tests/test_server.gd` → exit 0、111 条 PASS、日志无 FAIL/SCRIPT ERROR、末行 ALL PASSED，墙钟 9.510s（2026-10-04 实测）。
+- **2026-10-05 修订**：S9 改单 solve 经济口径（n≥5 首 seed 降级即停 `degraded_stop`，不再烧后续 seed 的秒级 solve dispatch）——中心段预对齐 + focus 单调化入引擎后（commit 8ee627c）失败路径含爬坡+逃逸链，多 seed 采样测试成本过高；宏族扩充落地、降级率回落后恢复多 seed。瘦身后实测 9.3s，17 套件全绿回基线。
 
 ### A2. 模式门禁断言（优先级：高，10 分钟）
 - **被测**：`main.gd:301` `mode_btns[m].disabled = (m==TIMER or m==TRAIN) and cube.n != 3`——现无任何测试。

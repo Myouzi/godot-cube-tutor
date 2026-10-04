@@ -102,50 +102,90 @@ func enqueue_turn(axis: Vector3, layers: Array, angle: float) -> bool:
 	return _enqueue(axis, layers, angle, Kind.PLAYER, false)
 
 
-## 合法 WCA 记号 token:首字符 ∈ UDLRFB(n>=4 时追加小写 udlrfb = 双层宽转,§17.2,
-## 小写合法性随阶数——3 阶拒绝),余下至多一个 ' 与至多一个 2,无其他字符
-## (§4:"2" 优先于 "'",R2'/R'2 ≡ R2;R''/R22 等重复修饰符非法)。单一规则源,
-## parse_alg 与 cube_server.validate_alg 共用,防两份实现漂移。
+## 合法 WCA 记号 token(单一规则源:文法解析在 _parse_wca_token,本函数与
+## parse_alg、cube_server.validate_alg 共用,防两份实现漂移)。
 static func is_valid_wca_token(t: String, n: int = 3) -> bool:
-	if t.is_empty() or t.length() > 3:
-		return false
-	var face := t[0]
-	if not AXIS_OF.has(face):
-		if n < 4 or not AXIS_OF.has(face.to_upper()):
-			return false
+	return not _parse_wca_token(t, n).is_empty()
+
+
+## WCA 记号 token 文法解析(v7 P0 扩展)→ 步字典 {axis, layers, angle};非法返回 {}。
+## 文法(修饰符 ' 与 2 至多各一、位置任意,"2" 语义 = 180°,R2'/R'2 ≡ R2;
+## R''/R22 等重复修饰符非法):
+##   外层:R / R' / R2(所有阶)
+##   小写双层宽转:u d l r f b + '/2(n≥4,§17.2;3 阶拒绝,记号集最小)
+##   数字单内层(v7):dR(3 ≤ d ≤ N-1)—— 该面起第 d 层单转;2R 不设
+##     (两层联动已有小写宽转表述,单留 2R 徒增与 R2 的手滑歧义面,审计裁决 Q4)
+##   数字宽层(v7):dRw(2 ≤ d ≤ N-1)—— 该面起外 d 层一次转
+## 数字前缀记号与小写同门槛:n≥4 才开放(3 阶仅有 6 个外层记号,§17.2)。
+## d 上界 N-1:第 N 层即对面外层,须用对面字母表述(N=5 的 5R 非法,即 L)。
+## layers 按 gp·axis 约定恒为正值(§2):自该面数第 k 层 = n-1-2k,负轴面(D/L/B)同式。
+static func _parse_wca_token(t: String, n: int) -> Dictionary:
+	if t.is_empty() or t.length() > 5:
+		return {}  # 最长 5:数字+面+w+'+2(如 3Rw'2 ≡ 3Rw2)
+	var i := 0
+	var depth := 0  # 数字前缀深度;0 = 无前缀
+	if t[i] >= "1" and t[i] <= "9":
+		depth = int(t[i])
+		i += 1
+	if i >= t.length():
+		return {}  # 只有数字,无面
+	var face := t[i]
+	var lower := face != face.to_upper()
+	if lower:
 		face = face.to_upper()
+	if not AXIS_OF.has(face):
+		return {}
+	i += 1
+	var num_wide := false  # 面后跟 w = 数字前缀宽层记号(dRw)
+	if i < t.length() and t[i] == "w":
+		num_wide = true
+		i += 1
 	var inv := false
 	var dbl := false
-	for i in range(1, t.length()):
-		if t[i] == "'":
-			if inv:
-				return false
+	while i < t.length():
+		if t[i] == "'" and not inv:
 			inv = true
-		elif t[i] == "2":
-			if dbl:
-				return false
+		elif t[i] == "2" and not dbl:
 			dbl = true
 		else:
-			return false
-	return true
+			return {}  # 重复修饰符或非法字符
+		i += 1
+	var layers := []
+	if depth > 0:
+		# 数字前缀只配大写面(2r/3rw 无此记号);n≥4 开放(§17.2 同小写门槛)
+		if lower or n < 4:
+			return {}
+		if num_wide:
+			if depth < 2 or depth > n - 1:
+				return {}
+			for k in depth:
+				layers.append(n - 1 - 2 * k)
+		else:
+			if depth < 3 or depth > n - 1:
+				return {}  # 2R 不设(裁决 Q4);d=N 为对面外层
+			layers.append(n - 1 - 2 * (depth - 1))
+	elif lower:
+		# 小写双层宽转(§17.2 既有语义,双层一次动画);小写配 w 无此记号
+		if n < 4 or num_wide:
+			return {}
+		layers = [n - 1, n - 3]
+	else:
+		if num_wide:
+			return {}  # Rw 无数字前缀形态不设,宽转用小写表述
+		layers = [n - 1]
+	var angle := PI if dbl else (-PI / 2.0 if not inv else PI / 2.0)
+	return {"axis": AXIS_OF[face], "layers": layers, "angle": angle}
 
 
-## 解析 WCA 记号(U D L R F B + ' + 2,"2" 优先于 "'";n>=4 追加小写宽转,双层一次动画)
-## → 步数组;含非法 token 返回 []。
+## 解析 WCA 记号串 → 步数组(每 token 经 _parse_wca_token 文法解析);
+## 含非法 token 返回 [](整批拒绝)。
 func parse_alg(alg: String) -> Array:
 	var out := []
 	for token in alg.split(" ", false):
-		if not is_valid_wca_token(token, n):
+		var step: Dictionary = _parse_wca_token(token, n)
+		if step.is_empty():
 			return []
-		var face := token[0]
-		var wide := face != face.to_upper()
-		var axis: Vector3 = AXIS_OF[face.to_upper()]
-		var inv := "'" in token
-		var dbl := "2" in token
-		var angle := PI if dbl else (-PI / 2.0 if not inv else PI / 2.0)
-		# 宽转 = 该面 + 相邻内层两层一次动画(§17.2);layers 按 gp·axis 约定恒为正值
-		var layers := [E, E - 2] if wide else [E]
-		out.append({"axis": axis, "layers": layers, "angle": angle})
+		out.append(step)
 	return out
 
 
@@ -262,15 +302,16 @@ func reset() -> void:
 	setup(n)
 
 
-## 54 字节 URFDLB(3 阶语义),行列序按 §3.1 表。
+## 6n² 字节 URFDLB(v7 泛化,2-7 阶通用;3 阶 = 54 字节与旧版逐字节一致),
+## 行列序按 §3.1 表沿 FACES 常量。
 func to_facelets() -> PackedByteArray:
 	var out := PackedByteArray()
-	out.resize(54)
+	out.resize(6 * n * n)
 	var i := 0
 	for fi in FACES.size():
 		var f: Dictionary = FACES[fi]
-		for r in 3:
-			for c in 3:
+		for r in n:
+			for c in n:
 				var cub = _grid[_face_cell(fi, r, c)]
 				var local := Vector3i((cub.basis.inverse() * Vector3(f.n)).round())
 				out[i] = cub.stickers[local]

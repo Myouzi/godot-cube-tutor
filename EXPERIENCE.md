@@ -40,3 +40,7 @@
 - PyPI 直连被重置(ConnectionResetError 104),pip 装包走清华镜像:`-i https://pypi.tuna.tsinghua.edu.cn/simple`。
 - GitHub 主站超时,但 `raw.githubusercontent.com` / `api.github.com` / `codeload.github.com` 直连可用;clone 换 codeload tar.gz 或镜像站。(2026-09-25 复测:主站恢复可达;push 仍走 SSH 443 更稳。)
 - MediaWiki `api.php?action=parse&prop=wikitext` 对 Python urllib 默认 UA 返回 403,须自定义 User-Agent;拿 wikitext 源码比抓网页 HTML 稳(模板 `{{case}}`/`{{Alg}}` 可直接正则解析)。
+- nxn 中心段降级率实验链(2026-10-05,改收敛逻辑前先做死态解剖:inc>0 宏数/maxalign/完成面,一次探针胜过四轮盲改)。基线:5-7 阶打乱态降级率 **100%**(40/40),n=4 0%——CN guard=12 是确定性上限,不是概率缺口。
+- 根因一(奇数阶可达性):打乱含核心层转层(odd n 的单层/宽层可含 x=0 中央层),真中心整体搬面(n=5/7 实测 88-93% 偏离原面),『每面=原色』目标不可达,任何搜索调参都救不了。已修:`_cn_prealg` 枚举 24 个核心旋转(层记号展开,模拟命中即用)作首段。
+- 根因二(度量震荡):focus 期贪心同时接受『placed 增 ∧ 对格降』宏 → 两度量互相让位无限弹跳(n=6 实测 placed 43↔44 跑满 300 段)。已修:对格单调非降 + 对格平台期需 placed 增 + 逃逸 BFS placed 有底(p0-3)。
+- 剩余缺口 = 宏族扩充,非搜索调参:guard 上调(300/1600)、随机重启(10 att)、逃逸搜索加宽(20k 节点 depth-4)、end_dfs 加预算(19.8k)四路实验对『差 1-2 格收尾坎』(ma=pc-1、1 面完成后 5 环)**全部 0 破解**——死亡均为 lex 局部 optimum,宏池表达不了突破宏。工作包:中盘 3-cycle 宏 + 收尾两面宏(§6 入池条款逐条模拟器实测),落地时 guard 上调至 100-250 段/400-900 步,并恢复 S9 多 seed solve 采样。失败路径成本须回瘦(guard=12 时 7-13ms/态)。

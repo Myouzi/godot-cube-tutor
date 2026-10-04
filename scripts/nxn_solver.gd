@@ -2000,12 +2000,24 @@ static func _cn_greedy(st: PackedByteArray, n: int) -> Dictionary:
 			continue  # 破已完成面
 		var st2 := _cn_apply(st, entry.perm)
 		var inc: int = _cn_placed(st2, pc) - p0
-		if inc <= 0:
+		var ma: int = 0
+		if focus:
+			ma = _cn_max_align(st2, pc) - m0
+			# focus 期严格单调(2026-10-05 二轮修复):对格非降(降 = 与 placed 度量
+			# 互相让位造成 43↔44 无限震荡,n=6 实测 300 段烧穿);对格平台期需 placed
+			# 增;对格爬升期允许 placed ≤2 回退(腾位再插入)
+			if ma < 0:
+				continue
+			if ma == 0 and inc <= 0:
+				continue
+			if ma > 0 and inc < -2:
+				continue
+		elif inc <= 0:
 			continue
 		var tok: int = int(entry.tokens)
 		var key2: int = inc
 		if focus:
-			key2 = (_cn_max_align(st2, pc) - m0) * 1000 + inc
+			key2 = ma * 1000 + inc
 		best = {"alg": String(entry.alg), "perm": entry.perm, "inc": inc,
 				"tokens": tok, "k": key2, "text": "中心交换宏:送回 %d 块中心" % inc}
 		break  # first-hit:命中即取(2026-10-03 性能实证,最优全扫在 n=7 不可负担)
@@ -2030,7 +2042,7 @@ static func _cn_bfs(st: PackedByteArray, n: int) -> Dictionary:
 	for e: Dictionary in ctx.bfs_atoms:
 		if done0 & ~int(e.keeps) == 0:
 			sub.append(e)
-	var queue: Array = [[st, [], p0]]
+	var queue: Array = [[st, [], p0, m0]]
 	var visited := {_cn_key(st): true}
 	var nodes := 1
 	var cap: int = ctx.cap
@@ -2039,6 +2051,7 @@ static func _cn_bfs(st: PackedByteArray, n: int) -> Dictionary:
 		var cur: PackedByteArray = entry[0]
 		var path: Array = entry[1]
 		var cp: int = entry[2]
+		var cm: int = entry[3]
 		if path.size() >= CN_BFS_DEPTH:
 			continue
 		var done := _cn_done_mask(cur, pc)
@@ -2047,7 +2060,14 @@ static func _cn_bfs(st: PackedByteArray, n: int) -> Dictionary:
 				continue
 			var nxt: PackedByteArray = _cn_apply(cur, e.perm)
 			var np: int = _cn_placed(nxt, pc)
-			if np < cp:
+			# 剪枝:done≠0 期 placed 不降;focus 期对格非降 + placed 有底
+			# p0-3(腾位预算,与贪心 focus 度量同口径,2026-10-05)
+			var nm: int = cm
+			if focus:
+				nm = _cn_max_align(nxt, pc)
+				if nm < cm or np < p0 - 3:
+					continue
+			elif np < cp:
 				continue
 			var key := _cn_key(nxt)
 			if visited.has(key):
@@ -2057,7 +2077,7 @@ static func _cn_bfs(st: PackedByteArray, n: int) -> Dictionary:
 			var path2 := path.duplicate()
 			path2.append({"alg": String(e.alg), "perm": e.perm,
 					"tokens": int(e.tokens), "inc": np - cp})
-			if np > p0 or (focus and _cn_max_align(nxt, pc) > m0):
+			if np > p0 or (focus and nm > m0):
 				var segs: Array = []
 				for m: Dictionary in path2:
 					segs.append({"alg": String(m.alg), "perm": m.perm,
@@ -2067,7 +2087,7 @@ static func _cn_bfs(st: PackedByteArray, n: int) -> Dictionary:
 				return {"segs": segs}
 			if nodes >= CN_BFS_NODES:
 				break
-			queue.append([nxt, path2, np])
+			queue.append([nxt, path2, np, nm])
 	return {}
 
 
@@ -2182,9 +2202,24 @@ static func _cn_solve(facelets: PackedByteArray, n: int) -> Dictionary:
 	if _cn_done_mask(st, pc) == 63:
 		return {"ok": true, "alg": "", "stages": [{"name": STAGE_NAMES_NXN[0], "alg": ""}],
 				"moves": 0, "segments": []}
+	# 真中心预对齐(2026-10-05 降级率修复之一):奇数阶打乱含核心层转层时,真中心
+	# 整体搬到别的面(实测 scramble(20) 后 88-93% 偏离原面),『每面=原色』目标
+	# 不可达 → 降级率 100%。先做一次全 Cube 旋转(全部 n 层同向转,层记号展开)
+	# 把核转回原姿态,目标即回到可达域;偶数阶无核,跳过。
+	var pre := _cn_prealg(st, n)
 	var segs: Array = []
 	var all: Array = []
 	var total := 0
+	if pre != "":
+		st = _cn_apply(st, _cn_id_perm(pre, n, _cn_cells(n)))
+		segs.append({"alg": pre, "text": "真中心预对齐:整 Cube 旋转把色方案转回原姿态"})
+		all.append(pre)
+		total += LBL._token_count(pre)
+	# 收敛仍靠贪心→逃逸链(2026-10-05 实验链定稿:guard 上调/随机重启/逃逸搜索
+	# 加宽/time box 四路实验对 lex 局部 optimum(差 1-2 格收尾坎)全部 0 破解,
+	# 降级率仍 100%——剩余缺口 = 宏族扩充(中盘 3-cycle + 收尾两面宏,§6 入池
+	# 条款逐条实测),预计落地时 guard 需上调至 100-250 段/400-900 步,见 EXPERIENCE。
+	# 本函数保留:预对齐(可达性前提)+ focus 单调化(禁 placed↔对格震荡)。
 	var guard := 0
 	while _cn_done_mask(st, pc) != 63:
 		guard += 1
@@ -2206,6 +2241,55 @@ static func _cn_solve(facelets: PackedByteArray, n: int) -> Dictionary:
 	return {"ok": true, "alg": joined,
 			"stages": [{"name": STAGE_NAMES_NXN[0], "alg": joined}],
 			"moves": LBL._token_count(joined), "segments": segs}
+
+
+## 真中心预对齐旋转搜索(仅奇数阶):当前真中心排布 = 原色方案在某个核心旋转
+## ρ 下像;枚举 24 个旋转(x^a y^b / y^a z^b / z^a x^b,a,b∈0..3,层记号展开),
+## 逐个模拟『应用后真中心各回原面』,命中返回其 alg,未命中返回 ""(理论必命中:
+## 核心姿态 ∈ 24 旋转)。
+static func _cn_prealg(st: PackedByteArray, n: int) -> String:
+	if n % 2 == 0:
+		return ""
+	var cells: PackedInt32Array = _cn_cells(n)
+	var pc: int = (n - 2) * (n - 2)
+	var mid: int = (n - 1) / 2  # 面内真中心格 (mid, mid) ∈ 1..n-2
+	var idx := PackedInt32Array()
+	for fi in 6:
+		idx.append(fi * pc + (mid - 1) * (n - 2) + (mid - 1))
+	var axis_algs := {
+		"R": " ".join(PackedStringArray(_cn_axis_tokens("R", n))),
+		"U": " ".join(PackedStringArray(_cn_axis_tokens("U", n))),
+		"F": " ".join(PackedStringArray(_cn_axis_tokens("F", n))),
+	}
+	var pairs := [["R", "U"], ["U", "F"], ["F", "R"]]
+	for a in 4:
+		for b in 4:
+			if a == 0 and b == 0:
+				continue
+			for pr: Array in pairs:
+				var alg := ""
+				for i in a:
+					alg += axis_algs[pr[0]] + " "
+				for i in b:
+					alg += axis_algs[pr[1]] + " "
+				alg = alg.strip_edges()
+				var st2 := _cn_apply(st, _cn_id_perm(alg, n, cells))
+				var ok := true
+				for fi in 6:
+					if st2[idx[fi]] != fi:
+						ok = false
+						break
+				if ok:
+					return alg
+	return ""
+
+
+## 全 Cube 旋转的层记号展开:绕 face 轴全部 n 层同向 90°(如 x = R 向全层)。
+static func _cn_axis_tokens(face: String, n: int) -> PackedStringArray:
+	var toks := PackedStringArray()
+	for k in range(1, n):
+		toks.append(face if k == 1 else "%d%s" % [k, face])
+	return toks
 
 
 ## 5-7 阶 hint:stage 0 = 中心段建议(贪心首宏);stage 1 = 转组棱段建议。

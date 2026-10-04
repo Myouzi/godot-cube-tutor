@@ -186,10 +186,15 @@ func _test_nxn_protocol_all() -> void:
 	for c in cases:
 		var n: int = c.n
 		var seeds: Array = [20261004 + n]
-		if n >= 5:  # 5-7 阶中心段降级率高(2026-10-04 探针实测首 seed 全降级),三 seed 采样
+		if n >= 5:  # 5-7 阶中心段降级率高(2026-10-04/05 探针实测全降级),保留多 seed 槽位;
+			# 但 solve dispatch 有秒级成本(预对齐+爬坡+逃逸链),单 seed 降级即止——
+			# 中心段宏族工作包落地、降级率回落后再恢复多 seed 采样
 			seeds = [20261004 + n, 20261004 + n + 100, 20261004 + n + 200]
 		var skipped := false
+		var degraded_stop := false
 		for sd_v in seeds:
+			if degraded_stop:
+				break
 			var sd: int = sd_v
 			_cube.setup(n)
 			var rsc := _dispatch("scramble", {"steps": 20, "seed": sd})
@@ -220,6 +225,7 @@ func _test_nxn_protocol_all() -> void:
 			_check(err.contains(S9_DEGRADE_MARK),
 					"S9 N=%d seed=%d solve 降级 error 带『%s』标记 实际=%s" % [n, sd, S9_DEGRADE_MARK, err])
 			print("PASS  S9 N=%d seed=%d solve 走降级熔断(%s)" % [n, sd, err])
+			degraded_stop = true  # 秒级成本口径:降级即止,不再烧后续 seed 的 solve
 		if skipped:
 			continue
 		# hint 断言固定在第一个 seed 的状态上(solve 纯计算不改面,重打乱对齐)

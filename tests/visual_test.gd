@@ -318,6 +318,37 @@ func _run() -> void:
 	await _save_shot(out_dir + "/shot_hint_degrade.png")
 	main._set_mode(0)
 
+	# ---- B1.5b 中心段降级样本(N=5,补拍 2026-10-04)。机制:5-7 阶 solve 降级是
+	# guard 预算口径(_cn_solve 12 段上限,段生成器不穷尽),hint 单段建议因此深走
+	# 不降级;但 N=5 seed 20261009 跟随建议 19 步确定性撞到 _cn_segment 穷尽
+	# (「中心段模板池未覆盖(降级): 卡点态 …」,探针预跑复核)。N=6/7 走 80 步不降级。
+	main._on_size_selected(5)
+	await _wait_frames(4)
+	var rng6 := RandomNumberGenerator.new()
+	rng6.seed = 20261009
+	cube.scramble(20, rng6)
+	while cube.is_animating():
+		await process_frame
+	var deg_c := false
+	for step6 in 80:
+		var h6: Dictionary = main._teach_hint()
+		if not String(h6.get("error", "")).is_empty():
+			deg_c = true
+			_check(String(h6.error).contains("中心段"),
+					"B1.5b 中心段降级 error 含「中心段」标记 实际=%s" % String(h6.error).substr(0, 48))
+			break
+		var sug6: Dictionary = h6.get("suggestion", {})
+		if sug6.is_empty() or String(sug6.get("alg", "")).is_empty():
+			break
+		for st6 in cube.parse_alg(String(sug6.alg)):
+			cube.apply_turn(st6.axis, st6.layers, st6.angle)
+	_check(deg_c, "B1.5b N=5 seed 20261009 跟随建议至中心段卡点,hint 降级非空 error")
+	main._set_mode(1)
+	await _wait_frames(4)  # _process 刷新 → HintLabel 持久显示中心段降级原因
+	_check(String(main.teach_hint.text).contains("⚠"), "B1.5b HintLabel 持久显示 ⚠ 中心段降级")
+	await _save_shot(out_dir + "/shot_hint_degrade_center.png")
+	main._set_mode(0)
+
 	main._on_size_selected(3)
 
 	c2.free()

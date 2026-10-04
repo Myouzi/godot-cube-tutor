@@ -40,7 +40,7 @@ MVP 仍是 3 阶模拟器；架构参数化保证 NxN 只加不改；异形魔�
 3. **全参数化**：n、层集合、贴色、相机距离由 n 推导，禁止字面量 `-1/1/27/9`。
 4. **架构保障**：自测以 N=4 再跑全绿（§7.2）。
 5. **后置**：宽转键位、阶数选择 UI、NxN 视觉测试。
-6. `play_alg`/`to_facelets` 为 3 阶语义，NxN 接入时仅作用于外层，无需改动（v6 修订：小写宽转记号是唯一例外，解析随 n 生效，见 §17.2）；MCP 命令层对 n 透明（state 返回 n）。
+6. `play_alg`/`to_facelets` 为 3 阶语义，NxN 接入时仅作用于外层，无需改动（v6 修订：小写宽转记号是唯一例外，解析随 n 生效，见 §17.2；v7 再修订：`to_facelets` 泛化为 6n²、解析扩数字内层/宽层记号——3 阶 54 字节输出逐字节不变，§6.2）；MCP 命令层对 n 透明（state 返回 n）。
 
 ## 3. 常量与数值（实现直接抄；`n` 出现处均为变量）
 
@@ -189,17 +189,17 @@ tests/visual_test.gd     # opengl3 截图，仅 N=3
 
 | cmd | 参数 | 语义 | data 返回 |
 |---|---|---|---|
-| `state` | 无 | **实时**读当前状态。facelets/solved 反映**已 bake 状态**，pending 队列不含在内；客户端以 `animating`/`queue_len` 判稳定，轮询至两者清零再读（v5.1） | `{n, facelets(54 字符 URFDLB 串), solved, moves, animating, queue_len}` |
+| `state` | 无 | **实时**读当前状态。facelets/solved 反映**已 bake 状态**，pending 队列不含在内；客户端以 `animating`/`queue_len` 判稳定，轮询至两者清零再读（v5.1） | `{n, facelets(6n² 字符 URFDLB 串，v7 由 54 泛化), solved, moves, animating, queue_len}` |
 | `scramble` | `steps=25`（可选） | 瞬时打乱（同按钮） | `{facelets, solved: false, moves: 0}` |
 | `restore` | 无 | 动画回放 full_log 逆序回到初始态 | `{queued: K}`（立即返回；用 `state` 轮询进度） |
 | `reset` | 无 | 瞬时重置（重建 cubie） | `{facelets, solved: true}` |
 | `apply_alg` | `alg: String` | play_alg 入队播放（不计步） | `{queued: K}` |
-| `solve` | 无 | **LBL 解（纯计算不执行，3 阶专用，N≠3 时 ok:false）**：按 7 阶段分段 | `{alg, stages:[{name, alg}]}` |
-| `hint` | 无 | 教学状态：当前阶段/进度/下一步建议（3 阶专用，§14） | `{stage, progress, suggestion:{piece, alg, text}}` |
+| `solve` | 无 | **分层解（纯计算不执行，v7 全阶 2-7）**：统一入口 nxn_solver——2 阶初学者法 3 段/3 阶 LBL 7 段/4-7 阶降阶 9 段（§14） | `{alg, stages:[{name, alg}]}`（段数随阶） |
+| `hint` | 无 | 教学状态：当前阶段/进度/下一步建议（v7 全阶 2-7，§14） | `{stage, progress, suggestion:{piece, alg, text}}`（stage 上限随阶 0..3/0..7/0..9） |
 
 未知 cmd → ok:false。命令分发函数与 socket 层解耦（分发器收/返 Dictionary），自测直测分发器。
 
-**参数校验（v5.1，信任边界）**：分发器入口统一校验，越界/非法一律 ok:false，且**校验先于入队**（全有或全无，不存在半执行）：`steps ∈ [1,100]`；`alg` 非空、≤2000 字符、≤300 token、每 token 须为合法 WCA 记号（v6:NxN 下含小写宽转 `udlrfb`，3 阶下小写非法，§17.2）。UI AlgEdit 共用同一校验函数。`hint`/`solve` 与 `state` 同口径：facelets 反映已 bake 状态，播放中调用返回的是当前已 bake 态的建议（引擎纯函数，天然如此）。
+**参数校验（v5.1，信任边界）**：分发器入口统一校验，越界/非法一律 ok:false，且**校验先于入队**（全有或全无，不存在半执行）：`steps ∈ [1,100]`；`alg` 非空、≤2000 字符、≤300 token、每 token 须为合法 WCA 记号（v6:NxN 下含小写宽转 `udlrfb`；v7:NxN 下再含数字内层 `dR`（3≤d≤N-1）与宽层 `dRw`（2≤d≤N-1），不加 `2R`；两者 3 阶下均非法，§17.2）。UI AlgEdit 共用同一校验函数。`hint`/`solve` 与 `state` 同口径：facelets 反映已 bake 状态，播放中调用返回的是当前已 bake 态的建议（引擎纯函数，天然如此）。
 
 ### 6.3 MCP 工具表（桥侧，均映射一个 NDJSON cmd）
 
@@ -276,8 +276,8 @@ MCP 客户端接入配置（ZCode / Claude Desktop 等）：
 
 ## 11. 明确边界
 
-- **支持**：任意 NxN 自由模式（数据层参数化完成）；MCP 外部控制（读状态/打乱/回放还原/重置/公式播放/LBL 解/教学提示/最优解/WCA 均匀打乱，后四者 v6 增量）。
-- **3 阶专用面**：教学模式、计时模式、`solve`/`hint`、`cube_solve_optimal`、`cube_scramble_wca`——N≠3 时教学/计时入口禁用（灰），相关命令 ok:false。
+- **支持**：任意 NxN 自由模式（数据层参数化完成）；MCP 外部控制（读状态/打乱/回放还原/重置/公式播放/分层解/教学提示/最优解/WCA 均匀打乱，后四者 v6 增量）。
+- **3 阶专用面（v7 收窄）**：计时模式、训练模式、`cube_solve_optimal`、`cube_scramble_wca`——N≠3 时计时/训练入口禁用（灰），相关命令 ok:false。教学模式与 `solve`/`hint` 已全阶 2-7 开放（v7）：统一入口 nxn_solver，2 阶 3 段/3 阶 7 段/4-7 阶 9 段，见 §14。
 - **不支持**：异形魔方（需"轴-深度"模型，届时重写坐标层，动画/贴纸/面判定四件套保留）；拖层宽层手势（小写宽转键位有，手势无）；竞速级计时细节（空格起表/触屏，YAGNI）。
 - **调研后明确不做**：拍照识别、蓝牙硬件、AI 教练内置、在线对战（§0 依据；外部 AI 可经 MCP 驱动，恰是不内置的理由）。
 
@@ -291,12 +291,13 @@ MCP 客户端接入配置（ZCode / Claude Desktop 等）：
 - v5：新增 MCP 外部控制——架构裁决（游戏内 TCP NDJSON + 零依赖 Python stdio 桥，否决 Godot 直接 stdio/HTTP 两案）；full_log 全量日志 + restore 逆序回放（免求解器还原，undo 也入 log、restore 入口快照清空防双重回放、回放不计步）；NDJSON 命令表 5 条 + MCP 工具表 5 个；自测 +3（分发器直测、restore 数学、socket 冒烟）；步骤表 +1。
 - v5 二审修正：F1 队列上限只约束键盘入口，alg/restore 批量入队豁免（否则回放丢步状态错乱）；F2 restore 入口清空撤销栈；F3 `--cube-port` 经 `--` 分隔用户参数传入；F4 nc 验收命令加 `-q1`/timeout 防挂住。
 - v5.1 三审（grilling 共识 9 项）：G1 restore 改 pop 语义（full_log 恒为"初始态→当前态"路径，中断自愈，废弃快照+清空，完成时 moves 归 0）；G2 state.facelets/solved 反映已 bake 状态（§6.2 注明）；G3 打断/追加矩阵（play_alg/apply_alg 追加不丢步；播放期忽略键盘/UndoBtn）；G4 TCP 单连接 + listen 失败降级；G5 MCP 参数校验（steps∈[1,100]、alg 边界与记号合法性，校验先于入队，UI 共用）；G6 restore 验收全自动；G7 nc `-q1`→`-N`（本机 OpenBSD nc 实测无 `-q`）；G8 工时 3~4h；G9 自测 +2（§7.4）。环境查证：Godot 4.7.2 stable 在位（~/.local/bin/godot）、EXPERIENCE.md 测试路径有效（X 会话 opengl3 截图/headless 逻辑）、仓库零代码从零建。
-- v6（grilling 两轮共识 + 事实修正）：P1.5~P4 与 NxN 后置项全部补成可实施详设（§13~§18）。关键裁决：H1 教学粒度=逐块引擎（"阶段级固定公式对任意状态会转错"，引擎即 LBL 求解器，solve 白送）；H2 公式表按标准白底记法存储 + 翻转映射运行时转换；H3 拖层=命中即拖/未命中 orbit、实时预览+松手 snap（最近 90° 倍数、<15° 回弹、手势原子挡分发器）；H4 求解器分层——LBL 游戏内纯 GDScript，最优解/WCA 均匀打乱=桥侧 optional `kociemba`（min2phase 无可靠 Python 包，实测 kociemba 0.01s/次；均匀打乱=随机合法状态→solve→取逆，并代为执行）；H5 计时=首操作起表/is_solved 停表/ConfigFile 存 AO5-AO12/计时中切模式作废；H6 CFOP 数据源=lukejacksonn/cube algorithms.ts 静态打包（AlgDB/CubeDB 均已死站，实测可拉取）；H7 三态模式切换（自由/教学/计时，状态跨模式保持）；H8 教学/计时/solve/hint 限 N=3；H9 阶段侧栏+「演示下一步」「自动完成本阶段」两按钮，不锁操作、阶段可回退。矩阵补拖层两行（§4）；NDJSON +solve/hint、MCP +4 工具（§6.2/6.3）；§11 边界同步。
+- v6（grilling 两轮共识 + 事实修正）：P1.5~P4 与 NxN 后置项全部补成可实施详设（§13~§18）。关键裁决：H1 教学粒度=逐块引擎（"阶段级固定公式对任意状态会转错"，引擎即 LBL 求解器，solve 白送）；H2 公式表按标准白底记法存储 + 翻转映射运行时转换；H3 拖层=命中即拖/未命中 orbit、实时预览+松手 snap（最近 90° 倍数、<15° 回弹、手势原子挡分发器）；H4 求解器分层——LBL 游戏内纯 GDScript，最优解/WCA 均匀打乱=桥侧 optional `kociemba`（min2phase 无可靠 Python 包，实测 kociemba 0.01s/次；均匀打乱=随机合法状态→solve→取逆，并代为执行）；H5 计时=首操作起表/is_solved 停表/ConfigFile 存 AO5-AO12/计时中切模式作废；H6 CFOP 数据源=lukejacksonn/cube algorithms.ts 静态打包（AlgDB/CubeDB 均已死站，实测可拉取）；H7 三态模式切换（自由/教学/计时，状态跨模式保持）；H8 教学/计时/solve/hint 限 N=3（2026-09-25 v7 推翻教学/solve/hint 部分为 2-7 阶全开，计时/训练维持 3 阶，见 v7 条目）；H9 阶段侧栏+「演示下一步」「自动完成本阶段」两按钮，不锁操作、阶段可回退。矩阵补拖层两行（§4）；NDJSON +solve/hint、MCP +4 工具（§6.2/6.3）；§11 边界同步。
 - v6.1（2026-09-25 体验修订，grilling 五问共识）：J1 orbit 俯仰放开至全向 ±89.9°（原 5°~85°；教学需看 D 面）；J2 加滚轮缩放（0.5~2.0× 基准 `1.7n+2.0`，步长 ×1.1，`main.gd` 顶层事件链）；J3 UI 随窗口缩放——stretch `canvas_items + expand`（原 disabled，窗口拉伸 UI 不变）；J4 按钮加大——顶栏 36→52px、按钮 min 宽统一 72px、顶栏字号 18、小字 13→14（原 56/64px 宽、16px 默认字号）；J5 抗锯齿——MSAA 4× + FXAA（原无任何 AA，魔方斜边轮廓锯齿）。实现注记：`var base := 1.7 * cube.n + 2.0` 因 `cube`（`@onready var cube = $CubeRoot`）无类型标注致 Variant 推断失败、main.gd parse error、场景实例退化为无脚本 Node3D——已改显式 `: float`；headless 回归曾被测试退出码统一判定模式掩盖（SCRIPT ERROR 中断断言但 exit 0 假绿），回归须同时校验 exit code 与日志无 SCRIPT ERROR。
 - v6.3（2026-09-25 打乱修订，grilling 四问共识）：K1 症状=NxN 打乱恒只转最外层单层（`_outer_layer` 恒返 E），N≥4 内层/中心区域纹丝不动、观感"没打乱"（数学层实测 N=3~7 守恒/可逆全绿，排除坏档）；K2 层覆盖=外层/内层/宽层混合随机（内层复原靠拖层——拖层手势支持任意层，键盘维持无内层键）；K3 步数随阶对齐 WCA 官方（25/40/60/80/100，2 阶 11）；K4 调研结论=TNoodle 对 NxN 即 random-move（含宽转/内层+冗余过滤），无需外部库，实现即对齐业界。3 阶行为完全不变（金标准 T15/计时不受影响）。新增 tests/test_scramble.gd（37 断言：各阶守恒/步数/层组约束/内层参与/数学复原/显式 steps 优先）。
 - v6 审计修订（双审计员并行，19 项发现全部成立）：**A1 高危——x2 映射撇号系统性错误**（x2 纯旋转 det=+1，共轭保定向，记号重写不产生撇；v6 初稿 U↔D' 会使每步方向反），改为无撇双表并钉死源教程姿态（白底蓝前红右=x2 型 U↔D/F↔B/R-L 不变；白底绿前右橙=z2 型 U↔D/R↔L/F-B 恒等），触发条件同经映射；A2 阶段表编号对齐（7=D 层棱位，完成即复原，与 solve 分段同口径）；A3 §6.4/§4/§0 陈旧 min2phase 表述清除，"自研求解器"改为"自研最优解求解器（LBL 引擎除外）"；A4 §4 末 P1.5/P2 预设计旧表述（阶段级固定公式，与 H1 矛盾）替换为指向 §13/§14；B 级——拖层 snap 改为新 finish 路径（非零量化角 PLAYER 记账）+8px 起手阈值+轴锁定细则；拖层中 Esc=回弹不退出；白十字改单层 F2+护棱分支（防自拆已归位棱）；公式表补"U 预对位"前提与三角换摆位 T15 实证；计时边角钉死（WCA 打乱走标记入口、restore/reset/切模式/二次打乱=作废、running 禁 PlayBtn、UndoBtn 不起表、成绩 key 毫秒+序号）；C 级——小写宽转校验感知 n（static 改带参）、文案方位词不经 remap、§18 补 N=4 截图与非 WCA 提示验收、§0 决策引用修正、§2.6 小写记号例外注记。
 - v6.2（2026-09-25，grilling 两问裁决）：K1 轨迹球四元数相机（`_view_quat` + `_apply_orbit_delta`，dx 绕局部 up / dy 绕局部 right 世界系左乘，灵敏度沿用 0.4°/px）替代欧拉 yaw/pitch，万向无极点，代价 roll 歪斜按裁决保留不加自动水平；初始四元数经 `Basis.looking_at(-(1,1,1))` 复现原构图（visual_test 7 图不依赖改动）；K2 复位双入口 = Home 键 + 顶栏「回正」按钮（ViewResetBtn），复位 = 初始三视图姿态 + 基准距离（`_reset_view`，幂等）；自测 +1（tests/test_view.gd：初始构图/越极无 NaN/2000 次随机增量 basis 正交/复位幂等/右拖方向同旧模型）。
 - v6.4（2026-09-25 调研驱动优化轮，依据 docs/open-source-comparison.md 附录 A + 三维审计两轮 + 终审，明细见 docs/design-optimization-report.md）：A-4 WCA 均匀打乱推广全模式——打乱按钮 3 阶且 kociemba 可用时优先 WCA（`tools/wca_scramble.py` 子进程生成，经 server `scramble_wca_apply` 标记入口与 MCP 同语义；降级清 WCA 标记 + full_log 差值步数如实提示，服务端信号路径步数未知时省略数字）；A-6 打乱种子化——`cube_scramble` 可选 `(seed, steps)`、`cube_scramble_wca` 可选 `seed`（`validate_seed`：数字/整数/|seed|≤2^53；桥侧非整数显式报错不静默降熵），smoke_bridge 加 `--port`（8788 被常驻实例占用时的唯一端到端验证通道）；A-5 播放速度——`turn_time` 0.05~0.90 s/步可调（clamp），顶栏滑杆即时生效，play_alg/restore 同控；A-8 训练统计简版——`train_stats.gd` 每案例 count/best/mean 持久化 `user://train_stats.cfg`，统计 key 冻结出题分类（`_train_case_cat`，切分类不清当前 case），完成入账要求 `cube.moves>0`（挡 MCP reset/代解直达复原的伪成绩），出现率与跨案例统计表按 §16.3 在先裁决 deferred；A-3 CI——GitHub Actions 跑 10 个 headless 测试 + py_compile×3 + WCA 生成器直跑 + smoke_bridge --port=18925，失败详情入 `::error` annotation（免认证可读）；数据重录——`data/cfop.json` 改由 `tools/rebuild_cfop.py` 从 speedsolving wiki 公共算法表重收集（614 条全量数学验证；f2l 用 wiki 原编号缺 37，与 lukejacksonn 的 1..41 是两套编号体系），消除上游许可依赖；许可证定稿 GPL-3.0。测试 +2（test_scramble_ui/test_train_stats），test_timer/test_server 假绿陷阱修复（`_fail` 累计制，quit(1) 不再被尾部 quit(0) 覆盖）。
+- v7（2026-09-25 用户裁决"教学扩展到全阶数 2-7"；蓝图 docs/v7-teach-nxn-plan.md，P3/P4b 详设 docs/v7-impl-design.md，审计 out/v7-plan-audit-report.md）：**推翻 H8 教学限 3 阶，教学模式 2-7 阶全开**（计时/训练维持 3 阶，CFOP 公式表与 WCA 打乱为 3 阶资产不扩）。三层架构：`lbl_solver.gd` 完全不动（架构红线），n=3 直用、4-7 阶约化后复用全部 7 阶段；新建 `scripts/nxn_solver.gd` 统一入口按 facelets 长度分派、调用方无分派逻辑（2 阶 24 字节独立初学者法 3 段"白面四角/黄面/角块归位"；3 阶 54 字节转调 lbl；4-7 阶 96-294 字节降阶法 9 段定长：中心段 → 组棱段含 parity 清理 → 约化提取 54 态走 lbl）；UI 阶段标签动态化（表长随阶 3/7/9）+ 协议解禁（solve/hint 按 n 放行，state facelets 契约 54 → 6n²，S3 断言同提交翻转）。底座：`to_facelets` 泛化 6n²（3 阶 54 字节逐字节同构）、记号扩数字内层 `dR`（3≤d≤N-1）/宽层 `dRw`（2≤d≤N-1），不加 `2R`（≡ R 冗余，徒增与 R2 的手滑歧义面）。关键裁决：①2 阶嵌入方案被审计证伪弃用——11 步打乱角置换恒奇（数值验证 20000/20000），"棱/中心填复原色"嵌入违反 3 阶群 sgn(角)=sgn(棱) 不变量，为无解非法态（金标准实跑 0/50），改独立初学者法小解法器；②parity 双判据（OLL 棱朝向和 mod 2 / PLL 置换符号，仅偶数阶，修正并入组棱段尾、9 段定长不变），原"角/棱排列奇偶"单判据漏 OLL parity；③L2C（收尾两面）死锁系结构性（审计 70 布置 39 种一发不可解；详设全原子枚举实证相邻剩 69/70），收尾必配查表 + 公式入池逆构造数学验证 + 熔断降级条款（阶段高亮 + 自由练习，分层验收）；④P4b mid 配对走宽层夹心族 `dRw·core·dRw'`（单层系闭环实测塌缩：公式串平移不可用、宽层机理换档可用）。测试 +7（test_nxn_notation/sim/2x2/centers/edges/reduce、test_teach_nxn_e2e 四阶教学全流程 E2E）；长动画等待用 animating/队列清零长轮询（60 帧边沿轮询口径不适用），CI 预算 ≈1.4 min（基线 ≈0.7 min ×2）。许可新增 §19：GusEscanda（无 LICENSE）仅结构思路借鉴、dwalton76（MIT）仅分段参照。
 
 ## 13. P1.5 鼠标拖层
 
@@ -313,6 +314,8 @@ MCP 客户端接入配置（ZCode / Claude Desktop 等）：
 
 **架构裁决**：教学粒度=「当前哪个块未归位 + 它在哪」，不是阶段级固定公式（对任意状态播固定公式会转错）。引擎=纯函数：输入 `to_facelets()`，输出 WCA 记号序列 + 分步教学元数据；**引擎本身就是 LBL 求解器**，`solve` 命令白送，零外部依赖。
 
+**v7 修订（全阶 2-7）**：本节以下 7 阶段表 = 3 阶口径（n=3 直用）。统一入口 `scripts/nxn_solver.gd` 按 facelets 长度分派、调用方无分派逻辑：**2 阶**（24 字节）= 独立初学者法 3 段（白面四角/黄面/角块归位；放弃嵌入方案——嵌入态违反 3 阶群 sgn(角)=sgn(棱) 不变量，见 §12 v7 裁决①）；**4-7 阶**（96-294 字节）= 降阶法 9 段定长（中心段 → 组棱段含 parity 清理 → 约化提取 54 态复用本节全部 7 阶段）；**3 阶**（54 字节）由 nxn_solver 内部转调 lbl_solver，**lbl_solver.gd 零改动**（架构红线）。阶段号契约：2 阶 0..3、3 阶 0..7、4-7 阶 0..9，STAGE_NAMES/STAGE_TIPS 随表导出，UI 零过滤逻辑。
+
 ### 14.1 记号映射（x2 翻转，v6 审计修订：无撇）
 
 公式表按**标准白底教程记法**存储，本项目配色 U=白/D=黄/F=绿/B=蓝/R=红/L=橙（白在上）。x2 是纯旋转（det=+1），共轭 `g·R(n,θ)·g⁻¹ = R(g·n, θ)` 保持角度与定向，**记号重写不产生撇**（撇只出现在镜像共轭）。v6 初稿的 `U↔D'` 系数学错误，会使每步层对方向反，已废弃。
@@ -326,9 +329,9 @@ MCP 客户端接入配置（ZCode / Claude Desktop 等）：
 
 `remap(alg) -> String` 按上表逐 token 替换；**公式表的触发条件（块位置/朝向描述）同样以源姿态表述，引擎判定前与公式一起经同一映射换算**。正确性由 T15 金标准兜底（§18）。
 
-### 14.2 阶段判定（stage_check(facelets) -> 0..7，v6 审计修订：编号对齐）
+### 14.2 阶段判定（stage_check(facelets) -> 0..7 = 3 阶口径；v6 审计修订：编号对齐；全阶段号契约见上 v7 修订段）
 
-0 = 无任何阶段满足（完全打乱/中途乱转）；1~7 为七个实质阶段，**7 完成即复原**：
+0 = 无任何阶段满足（完全打乱/中途乱转）；1~7 为七个实质阶段，**7 完成即复原**（3 阶；2 阶 3 段/4-7 阶 9 段各自口径）：
 
 | # | 阶段 | 判定（复用面查询） |
 |---|---|---|
@@ -370,7 +373,7 @@ MCP 客户端接入配置（ZCode / Claude Desktop 等）：
 - 右侧 ~220px 侧栏：7 阶段列表，当前进度实时高亮（绿=完成、蓝=当前、红=回退），每阶段一句要领文案。
 - 两按钮：**演示下一步**（引擎建议 → play_alg 播放，追加语义，替你执行）；**自动完成本阶段**（循环"建议→执行"批量入队，受打断矩阵约束）。不做"回退本阶段"按钮——undo/restore 已覆盖；演示走 play_alg 不入撤销栈（v5.1 语义），要撤销演示后的整体状态用 restore/undo 玩家步。
 - 教学文案的方位词（右/前/左后等）**直接按本项目朝向（U=白在顶）撰写**，不经 remap 转换——remap 只作用于公式记号与触发判定，文案是人写死的中文。
-- 入口：TopBar 模式切换（§15.3）；N≠3 禁用。
+- 入口：TopBar 模式切换（§15.3）；v7 起全阶 2-7 可用（阶段列表随引擎表长动态生成，3/7/9 段，外包 ScrollContainer 防高阶溢出）。
 - `hint` 命令/`cube_hint` 工具返回同一引擎输出（外部 AI 教练 = 循环 hint→apply_alg）。
 
 ## 15. P3 计时器
@@ -387,7 +390,7 @@ MCP 客户端接入配置（ZCode / Claude Desktop 等）：
 
 ### 15.3 模式切换
 
-TopBar 三态单选：**自由 / 教学 / 计时**。切换即切 UI 布局（教学=右侧栏，计时=中央大字计时+侧栏历史），**魔方与状态跨模式保持**（切到计时不重置魔方）。N≠3 时教学/计时禁用（灰）。
+TopBar 三态单选：**自由 / 教学 / 计时**。切换即切 UI 布局（教学=右侧栏，计时=中央大字计时+侧栏历史），**魔方与状态跨模式保持**（切到计时不重置魔方）。N≠3 时计时禁用（灰；v7 收窄，教学 2-7 全开，训练模式同为 3 阶专用）。
 
 ## 16. P4 CFOP 案例训练（原则级，开工前再补 case 表）
 
@@ -407,7 +410,7 @@ TopBar 三态单选：**自由 / 教学 / 计时**。切换即切 UI 布局（�
 |---|---|---|
 | P1.5 | T-drag（headless 单测） | snap 量化最近 90° 倍数；<15° 回弹不计步不记 log；180° 一步一记；拖层步入撤销栈/full_log |
 | P2 | **T15 金标准**：随机 100 态 → `solve` → 逆序 apply → 全部 solved；LBL 解步数 < 160（2026-09-24 修复轮修订：cube.gd 负轴选层修复后 scramble 为 6 面均匀分布，实测最坏 156/seed 999983，原 <150 系偏浅分布上的经验值；100 态全复原等正确性门不变） | stage_check 对构造状态逐阶段判定正确；hint 返回建议后 apply 即该块归位；自动完成=循环演示至阶段判定通过 |
-| P2 | T-MCP：`solve`/`hint` 分发器直测 | 3 阶返回结构完整；N=4 时 ok:false |
+| P2 | T-MCP：`solve`/`hint` 分发器直测 | 3 阶返回结构完整；~~N=4 时 ok:false~~（v7 P7 已翻转：N=4 打乱态 solve ok:true + 9 段 + hint 结构，tests/test_server.gd S3） |
 | P3 | T-timer：状态机单测 | scrambled→首操作起表（UndoBtn 不起表）→is_solved 停表；AO5/AO12 计算（含去头去尾）纯函数断言；计时中切模式/restore/reset/二次打乱=作废；running 中 PlayBtn 禁用；"非 WCA 均匀打乱"提示路径 |
 | P3 | T-bridge（kociemba 装机时跑，未装跳过标记 SKIP） | 随机合法状态生成合法性（角≡0 mod3/棱≡0 mod2/置换奇偶）；solve 取逆 apply 回到该状态；代为执行走打乱标记入口 |
 | P4 | 开工前补 | —— |
@@ -415,3 +418,10 @@ TopBar 三态单选：**自由 / 教学 / 计时**。切换即切 UI 布局（�
 | P2 | T15 补充（v6 审计后） | remap 两型映射自检各 6 条（x2 型 U↔D/F↔B/R/L 不变；z2 型 U↔D/R↔L/F/B 不变，全无撇）；三角换摆位实证；白十字护棱分支（U 层已归位棱经启发式处理后仍在位） |
 
 验收门维持 exit code 判定；`solve`/`hint`/计时逻辑全部走 headless 自测，手感类（拖层、教学模式浏览）人工验收。
+
+## 19. 许可与借鉴来源（v7 新增）
+
+- **本项目**：GPL-3.0（见 LICENSE；选择理由与代价见 README「许可」节）。
+- **GusEscanda/rubik-cube-solver**：**无 LICENSE 文件**（2026-09-25 查证）——仅自由借鉴其 `methods.json` 的「分段树 × 槽位旋转 × 条件匹配」方法 DSL **结构思路**（与 §14 教学引擎同构，印证 NxN 人类方法可行性）；**不取数、公式不得逐字抄**，NxN 各段公式一律从公共方法域（教程站/社区公共公式集）收集后走 A-2 管线（收集 → 记号转译 → 引擎逆构造数学验证）重录。
+- **dwalton76/rubiks-cube-NxNxN-solver**：MIT——仅作降阶法**分段结构参照**（中心 → 组棱 → 约化的降阶次序印证）；其 lookup-table + IDA 机器求解路线（5x5 实测 90 分钟）与教学引擎目标不同，不可平移。
+- **CFOP 数据**（`data/cfop.json`）：speedsolving wiki 社区公共算法表重录，公式序列为操作事实、编排为本项目自有，无上游许可依赖——来源与立场详见 README「数据来源」节（lukejacksonn/cube 无 LICENSE 前车之鉴亦载于此）。

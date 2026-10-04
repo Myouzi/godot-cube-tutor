@@ -5,11 +5,11 @@
 ## 功能
 
 - **自由模式**:键盘转层、撤销/重置、打乱(3 阶且 kociemba 可用时优先 WCA 均匀序列,否则随机步并如实提示)、公式播放(输入框 + 播放按钮,WCA 记号;「速度」滑杆 0.05~0.90 秒/步即时生效)
-- **教学**(限 3 阶):层先法逐块引导——右侧 7 阶段进度栏、当前块提示与分步公式、「演示下一步」/「自动完成本阶段」;转错阶段自动回退标红
+- **教学**(2~7 阶):按阶自动切换引擎——2 阶初学者法 3 段(白面四角 → 黄面 → 角块归位)、3 阶层先法 7 段、4~7 阶降阶法 9 段(拼中心 → 组棱,偶数阶含 parity 修正 → 约化为 3 阶层先法);右侧阶段进度栏随阶数动态生成、当前块提示与分步公式、「演示下一步」/「自动完成本阶段」;转错阶段自动回退标红
 - **计时**(限 3 阶):打乱后首操作自动起表、复原瞬间停表;历史成绩、AO5/AO12、单次最佳,持久化到 `user://times.cfg`;restore/reset/切模式作废当次;打乱与自由模式同口径(3 阶且 kociemba 可用时优先 WCA 均匀序列,序列显示在面板)
 - **训练**(限 3 阶):CFOP 案例库离线出题(F2L 41 / OLL 57 / PLL 21,共 119 case),随机 case 构造 + 参考公式演示;打乱与自由模式同口径(优先 WCA);每案例成绩统计(次数/best/mean,持久化 `user://train_stats.cfg`)
-- **NxN**:顶栏「N 阶」切换 2~7 阶,全参数化;Alt+字母宽转(4 阶以上);打乱对齐 WCA TNoodle 策略(内层/宽层混合随机,步数 40~100 随阶提升),内层可用拖层转动
-- **MCP 外部控制**:游戏内 TCP NDJSON 服务器 + 零依赖 Python stdio 桥,外部 AI 可读状态、打乱、回放还原、LBL 求解、教学提示、Kociemba 最优解、WCA 均匀打乱
+- **NxN**:顶栏「N 阶」切换 2~7 阶,全参数化;Alt+字母宽转(4 阶以上);公式输入框支持数字内层/宽层记号(`3R` 单内层、`3Rw` 宽层,4 阶以上);打乱对齐 WCA TNoodle 策略(内层/宽层混合随机,步数 40~100 随阶提升),内层可用拖层转动
+- **MCP 外部控制**:游戏内 TCP NDJSON 服务器 + 零依赖 Python stdio 桥,外部 AI 可读状态(6n² facelets)、打乱、回放还原、分层求解(2~7 阶:2 阶初学者法/3 阶 LBL/4~7 阶降阶)、教学提示、Kociemba 最优解(3 阶)、WCA 均匀打乱(3 阶)
 
 ## 运行
 
@@ -50,7 +50,7 @@ pip install kociemba -i https://pypi.tuna.tsinghua.edu.cn/simple  # PyPI 直连�
 ## 测试
 
 ```bash
-# 逻辑(headless):self_test / test_drag / test_scramble / test_scramble_ui / test_lbl / test_server / test_timer / test_view / test_wide / test_train_stats
+# 逻辑(headless):self_test / test_drag / test_scramble / test_scramble_ui / test_lbl / test_server / test_timer / test_view / test_wide / test_train_stats / test_nxn_notation / test_nxn_sim / test_nxn_2x2 / test_nxn_centers / test_nxn_edges / test_nxn_reduce / test_teach_nxn_e2e(v7 全阶数 2-7 与 4 阶教学 E2E)
 # 注:test_scramble_ui / test_timer 的 WCA 断言依赖 python3 + kociemba(缺失会降级随机步而真红,非假绿)
 godot --headless -s tests/self_test.gd
 python3 -m py_compile tools/mcp_bridge.py tools/wca_scramble.py

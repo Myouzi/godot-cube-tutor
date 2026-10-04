@@ -14,8 +14,15 @@
 - **`:=` 对 Variant 推断失败是 parse error 而非运行时错**:`@onready var cube = $CubeRoot`(无类型标注)后写 `var base := 1.7 * cube.n + 2.0`,`cube.n` 是 Variant,整个脚本加载失败。症状极具迷惑性——场景实例退化成无脚本的基类节点(如 Node3D),运行时报 `Nonexistent function 'xxx' in base 'Node3D'`,而函数明明存在于源码。对策:涉及无类型变量的表达式用显式类型标注(`var base: float = ...`)。
 - **SceneTree 测试"退出码末尾统一判定"会假绿**:`_run()` 协程中途 SCRIPT ERROR 会终止协程、后续断言全部不执行,但已排队的 `quit(0)` 照常执行 → `ALL PASSED` + exit 0 的假象。回归判定必须同时校验 exit code 与日志中无 `SCRIPT ERROR`(如 `grep -c "SCRIPT ERROR"`)。
 
+## 魔方领域坑
+- **to_facelets 泛化:坑在下游契约连锁,不在公式本身**(v7 P0)。54 写死改 6n² 只是 `resize(6*n*n)` + 行列枚举随 n(沿用 FACES 表);真正的破坏面是所有按 54 假设的下游——求解引擎按 facelets 长度分派、NDJSON state 契约、mcp_bridge/smoke_bridge 的长度断言、test_server 的 N=4 拒绝断言。两条纪律:①以「3 阶 54 字节与旧版逐字节同构」为锚点,旧金标准(URFDLB 复原序 + 4 角环断言)回归钉死;②长度契约是破坏性协议变更,下游断言翻转必须与实现**同一提交**(v7 把 S3 翻转排 P7 与解禁同提交,审计曾抓出"翻转排 P8"的分期矛盾)。
+- **2 阶态嵌入 3 阶必为非法态(奇偶陷阱,防复发)**:把 2 阶打乱态嵌入 3 阶(棱/中心填复原色)看似"少几块的合法态",实则无解——WCA 2 阶打乱 11 步,每步 90° 面转是角块 4 循环 = 奇置换,11 步叠加角置换恒奇(数值验证 20000/20000);而 3 阶群不变量 **sgn(角置换) = sgn(棱置换)**(每个 90° 面转同时给角与棱各乘一个 4 循环,两符号同步翻转),嵌入态棱置换恒等(偶)而角置换恒奇,违反不变量,不在 3 阶合法态群中(headless 金标准实跑 0/50 复现)。2 阶自身无棱块、不受此约束,嵌入后才受目标群约束。防复发:任何「把 N 阶态嵌入有棱魔方群」的设计,先验 sgn(角)=sgn(棱) 群不变量;v7 已裁决放弃嵌入,2 阶独立解法器(初学者法 3 段)。
+- **借鉴红线:无 LICENSE 仓库只借结构思路,不取数**。lukejacksonn/cube(无 LICENSE)曾致 cfop.json 整体重录;GusEscanda/rubik-cube-solver 同样无 LICENSE,仅借鉴其 methods.json「分段树 × 槽位旋转 × 条件匹配」DSL 思路,公式从公共方法域收集重录(A-2 管线)。dwalton76/rubiks-cube-NxNxN-solver 为 MIT 可合法引用,但其 lookup-table + IDA 机器求解路线与教学引擎不同构,仅作降阶分段结构参照。
+
 ## CI 与自动化(GitHub Actions)
 - headless E2E 等 `_process` 边沿的断言必须**轮询等条件**(上限 60 帧),固定「等 2 帧」在 CI 慢 runner 上时序 flaky(2026-09-25 首跑实证:本地干净 clone 10 测全过、同测试 30 连跑全过、119 case 全量探针全过,CI 仍挂);否定性断言(「不入账」)给 10 帧观察窗,窗口过小会假绿。
+- **60 帧边沿轮询只适用短时序断言;长动画等待必须队列清零长轮询**(v7 P8 口径):4 阶教学「自动完成本阶段」100+ 步 × 0.18s ≈ 20-40s,远超 60 帧上限——等待须轮询 `animating`/`queue_len` 至双双清零(范式 `tests/visual_test.gd:147`,300 次 × 0.1s)。E2E 等待写法先问自己:等的是"某状态位翻转"(边沿,短窗)还是"一整段动画播完"(长轮询,分钟级)。
+- **CI 时长预算数字**(v7 P8 定):基线实测 ≈0.7 min(GitHub Actions API,最近成功 run 44/34/38/44/44s),2 倍预算 ≈1.4 min;新增测试(尤其长 E2E)先按此预算核算,超预算先优化(段级缓存/减态数)再合入,防 CI 时长失控。
 - 公开仓库的 Actions 诊断:`runs/{id}/logs` 与日志网页均需认证,jobs API 匿名只给 conclusion;`::error` **annotation 免认证可读**——CI 设计成失败时把输出尾部塞进 annotation 文本,当场定位根因,不用求 token。
 - git push 走 SSH over 443(`~/.ssh/config`:`Host github.com → HostName ssh.github.com → Port 443`);https 无缓存凭证时免交互直接失败,配一次密钥永久免密。
 

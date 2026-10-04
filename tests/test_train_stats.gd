@@ -136,7 +136,12 @@ func _test_ui() -> void:
 	_check(not main._train_case.is_empty(), "E2E 再次出题成功")
 	var id2: String = main._train_case_id()
 	var before: int = int(main._train_stats.stats(id2).count)
-	await process_frame  # _process 把 _was_solved 置 false(未复原基线)
+	for i in 120:  # 轮询等未复原基线:出题打乱动画期间 _process 跳过边沿段(main.gd
+		# is_animating 守卫),固定单帧在慢 runner 上会落在动画期(_was_solved 残留
+		# true,复原无上升沿→漏入账;gate 全量跑 flaky 实证,同 b7bf7e0 纪律)
+		if not main._was_solved:
+			break
+		await process_frame
 	var steps: Array = main._cfop_steps(String(main._train_case.algs[0]))
 	for s in steps:
 		main.cube.apply_turn(s.axis, s.layers, s.angle)
@@ -155,11 +160,17 @@ func _test_ui() -> void:
 	main._on_train_new()
 	_check(not main._train_case.is_empty(), "防护①出题成功")
 	var id_frozen: String = main._train_case_id()
+	# 出题随机:可能抽到与 E2E 段相同的 case(历史 count 非零),断言一律用相对口径
+	var before_frozen: int = int(main._train_stats.stats(id_frozen).count)
 	_check(id_frozen.begins_with("f2l/"), "出题 key 冻结于出题分类(%s)" % id_frozen)
 	_check(not ".0" in id_frozen, "数字 case 名整型化(key 无 '.0' 形态,%s)" % id_frozen)
 	main._set_train_cat("oll")
 	_check(main._train_case_id() == id_frozen, "切分类后统计 key 不变(仍指出题分类)")
-	await process_frame  # 记未复原基线(_was_solved=false)
+	for i in 120:  # 轮询等未复原基线(同 E2E:出题动画期 _process 跳过边沿段,
+		# 单帧 await 在慢 runner 上会漏记 _was_solved=false)
+		if not main._was_solved:
+			break
+		await process_frame
 	var steps2: Array = main._cfop_steps(String(main._train_case.algs[0]))
 	for s in steps2:  # 正序 apply_turn 瞬时复原(玩家语义计步,moves>0)
 		main.cube.apply_turn(s.axis, s.layers, s.angle)
@@ -167,8 +178,9 @@ func _test_ui() -> void:
 		if main._train_done:
 			break
 		await process_frame
-	_check(int(main._train_stats.stats(id_frozen).count) == 1,
-			"切分类后完成记到出题分类(%s)" % id_frozen)
+	_check(int(main._train_stats.stats(id_frozen).count) == before_frozen + 1,
+			"切分类后完成记到出题分类(%s,count %d→%d)"
+					% [id_frozen, before_frozen, before_frozen + 1])
 	_check(int(main._train_stats.stats("oll/%s" % main._case_name(main._train_case)).count) == 0,
 			"未出题的 oll 同名 case 零入账(不串账)")
 	# 污染防护②(终审):出题后纯 MCP 路径(reset)造成的复原跳变不入账——

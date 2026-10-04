@@ -65,7 +65,9 @@ jobs:
           set -uo pipefail
           fail=0
           for t in self_test test_drag test_lbl test_scramble test_scramble_ui \
-                   test_server test_timer test_train_stats test_view test_wide; do
+                   test_server test_timer test_train_stats test_view test_wide \
+                   test_nxn_notation test_nxn_sim test_nxn_2x2 test_nxn_centers \
+                   test_nxn_edges test_nxn_reduce test_teach_nxn_e2e; do
             echo "::group::godot --headless -s tests/${t}.gd"
             log="/tmp/${t}.log"
             if godot --headless -s "tests/${t}.gd" 2>&1 | tee "$log"; then

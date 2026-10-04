@@ -34,7 +34,7 @@ TOOLS = [
     {
         "name": "cube_get_state",
         "description": (
-            "读取魔方实时状态:{n, facelets(54 字符 URFDLB,已 bake 状态), solved, moves, "
+            "读取魔方实时状态:{n, facelets(6n² 字符 URFDLB,已 bake 状态), solved, moves, "
             "animating, queue_len}。animating/queue_len 不为 0 表示动画未完,请轮询至两者清零再取 facelets。"
         ),
         "inputSchema": _OBJECT,
@@ -86,16 +86,18 @@ TOOLS = [
     {
         "name": "cube_solve",
         "description": (
-            "LBL 分层解(3 阶专用):对当前已 bake 状态求七阶段层先法解,纯计算不执行。"
-            "返回 {alg, stages:[{name, alg}]×7};N≠3 时返回错误。"
+            "分层解(2-7 阶):对当前已 bake 状态按阶数求分阶段解,纯计算不执行。"
+            "返回 {alg, stages:[{name, alg}]},段数随阶数(2 阶 3 段 / 3 阶 7 段 / 4-7 阶 9 段);"
+            "个别构型模板池未覆盖时返回错误(带降级标记)。"
         ),
         "inputSchema": _OBJECT,
     },
     {
         "name": "cube_hint",
         "description": (
-            "教学提示(3 阶专用):当前 LBL 阶段/进度与下一步建议。"
-            "返回 {stage, progress, suggestion:{piece, alg, text}}。"
+            "教学提示(2-7 阶):当前阶段/进度与下一步建议。"
+            "返回 {stage, progress, suggestion:{piece, alg, text}},"
+            "stage 上限随阶数(2 阶 0..3 / 3 阶 0..7 / 4-7 阶 0..9)。"
         ),
         "inputSchema": _OBJECT,
     },

@@ -1,6 +1,7 @@
 extends SceneTree
-## cube_server.gd 服务侧自测(PLAN §6.2 P2/P3 增量):solve/hint 结构、N=4 拒绝、
-## WCA 打乱标记入口 scramble_wca_apply、socket 冒烟(§18 T-MCP)。
+## cube_server.gd 服务侧自测(PLAN §6.2 P2/P3 增量;v7 P7 协议解禁):solve/hint
+## 结构(3 阶 7 段 / 4 阶 9 段)、WCA 打乱标记入口 scramble_wca_apply、socket 冒烟
+## (§18 T-MCP)。
 ## 运行:godot --headless -s tests/test_server.gd;任何断言失败 exit 1,全过 exit 0。
 ## 分发器直测(不起 socket)为主,socket 仅一条冒烟;核心数学由 self_test.gd 覆盖。
 
@@ -8,9 +9,9 @@ var _cube: Node3D
 var _server: Node
 var _fail := false
 
-## lbl_solver.gd 由并行工程师交付(P2);缺失时 solve/hint 走 SKIP 路径,
+## nxn_solver.gd 由并行工程师交付(v7 P2-P5);缺失时 solve/hint 走 SKIP 路径,
 ## 文件就绪后本测试自动变全测(联调由整合阶段兜底)。
-const NOT_READY := "lbl_solver not ready"
+const NOT_READY := "nxn_solver not ready"
 
 
 func _initialize() -> void:
@@ -54,7 +55,7 @@ func _run() -> void:
 	_test_not_ready_path()
 	_test_solve_structure()
 	_test_hint_structure()
-	_test_n4_reject()
+	_test_n4_solve_hint()
 	_test_wca_marker()
 	_test_validation()
 	_test_seed_validation()
@@ -66,13 +67,13 @@ func _run() -> void:
 
 ## S0:引擎缺失路径(文件就绪后此测试自动退化为一句 PASS):ok:false 且 error 含标记串。
 func _test_not_ready_path() -> void:
-	if ResourceLoader.exists("res://scripts/lbl_solver.gd"):
-		print("PASS  S0 lbl_solver.gd 已就绪,走全测路径")
+	if ResourceLoader.exists("res://scripts/nxn_solver.gd"):
+		print("PASS  S0 nxn_solver.gd 已就绪,走全测路径")
 		return
 	_cube.setup(3)
 	var r := _dispatch("solve")
 	_check(r.ok == false, "S0 引擎缺失 solve ok:false")
-	_check(String(r.get("error", "")).contains(NOT_READY), "S0 solve error 含 lbl_solver not ready")
+	_check(String(r.get("error", "")).contains(NOT_READY), "S0 solve error 含 nxn_solver not ready")
 	var r2 := _dispatch("hint")
 	_check(r2.ok == false and String(r2.get("error", "")).contains(NOT_READY),
 			"S0 hint 同样 ok:false + not ready")
@@ -121,14 +122,39 @@ func _test_hint_structure() -> void:
 	_check(s.text is String and not (s.text as String).is_empty(), "S2 suggestion.text 非空")
 
 
-## S3:N=4 时 solve/hint 均 ok:false(§11:3 阶专用)。
-func _test_n4_reject() -> void:
+## S3:N=4 solve/hint 放行(v7 P7 协议解禁,§11 契约随 2-7 阶全开作废):
+## seed+scramble 打乱态上(复原态直 solve 对打乱态零覆盖)断言 solve ok:true +
+## 9 段(降阶法契约,中心/组棱 + lbl 7 段),hint 结构完整(stage 0..9 + 三键建议)。
+## 打乱走 scramble 命令的 seed 口径:同 (seed, steps) 可复现,失败可重现。
+func _test_n4_solve_hint() -> void:
 	_cube.setup(4)
+	var rsc := _dispatch("scramble", {"steps": 25, "seed": 424242})
+	_check(rsc.ok == true, "S3 N=4 seed+scramble ok")
+	_check(rsc.data.solved == false, "S3 N=4 打乱后非复原态")
 	var r1 := _dispatch("solve")
-	_check(r1.ok == false, "S3 N=4 solve ok:false")
-	_check(String(r1.get("error", "")).length() > 0, "S3 N=4 solve 带错误信息")
+	_check(r1.ok == true, "S3 N=4 solve ok:true")
+	if r1.ok:
+		_check(r1.data.has("alg") and r1.data.alg is String and not (r1.data.alg as String).is_empty(),
+				"S3 N=4 solve.alg 非空字符串")
+		_check(r1.data.stages is Array and r1.data.stages.size() == 9,
+				"S3 N=4 solve.stages 恰 9 段 实际=%d" % ((r1.data.stages as Array).size() if r1.data.stages is Array else -1))
+		var ok_shape := true
+		for st in r1.data.stages:
+			if not (st is Dictionary and st.has("name") and st.name is String
+					and st.has("alg") and st.alg is String):
+				ok_shape = false
+		_check(ok_shape, "S3 每段结构 {name:String, alg:String}")
 	var r2 := _dispatch("hint")
-	_check(r2.ok == false, "S3 N=4 hint ok:false")
+	_check(r2.ok == true, "S3 N=4 hint ok:true")
+	if r2.ok:
+		_check(r2.data.has("stage") and r2.data.stage is int
+				and int(r2.data.stage) >= 0 and int(r2.data.stage) <= 9,
+				"S3 N=4 hint.stage ∈ 0..9 实际=%s" % str(r2.data.get("stage", "?")))
+		_check(r2.data.has("progress"), "S3 N=4 hint 有 progress")
+		var s = r2.data.suggestion
+		_check(s is Dictionary and s.has("piece") and s.has("alg") and s.has("text"),
+				"S3 suggestion 结构 {piece, alg, text}")
+		_check(s.alg is String and not (s.alg as String).is_empty(), "S3 suggestion.alg 非空")
 	_cube.setup(3)
 
 

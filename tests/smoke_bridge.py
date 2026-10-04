@@ -165,9 +165,10 @@ def main():
         ok("tools/list 9 工具齐全(kociemba 两工具恒列出)")
 
         st = poll_state(bridge, 30)
-        if len(st["facelets"]) != 54 or not st["solved"]:
-            fail("初始 state 应 54 字符且 solved=true: %r" % st)
-        ok("cube_get_state: facelets 54 字符 solved=true")
+        if len(st["facelets"]) != 6 * st["n"] ** 2 or not st["solved"]:
+            fail("初始 state 应 6n² 字符且 solved=true: %r" % st)
+        ok("cube_get_state: facelets %d 字符(6n², n=%s) solved=true"
+           % (len(st["facelets"]), st["n"]))
 
         st = bridge.tool("cube_scramble")
         if st["solved"] or st["facelets"] == SOLVED_STR:

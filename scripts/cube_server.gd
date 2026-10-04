@@ -5,7 +5,7 @@ extends Node
 ## 命令分发 dispatch() 与 socket 层解耦(收/返 Dictionary),不起 socket 可直测(§6.2)。
 
 const CubeScript := preload("res://scripts/cube.gd")
-const LBL_SOLVER_PATH := "res://scripts/lbl_solver.gd"  # P2 教学引擎/LBL 求解器(§14)
+const NXN_SOLVER_PATH := "res://scripts/nxn_solver.gd"  # v7 教学引擎统一入口:2 阶独立/3 阶转调 lbl/4-7 阶降阶(§14)
 const FACELET_CHARS := "URFDLB"
 const STEPS_MIN := 1
 const STEPS_MAX := 100
@@ -127,23 +127,20 @@ func dispatch(req: Dictionary) -> Dictionary:
 			scramble_entered.emit(wca_alg)  # 计时:进 scrambled(§15.1 WCA 打乱来源)
 			return {"id": id, "ok": true, "data": {"queued": wca_queued, "from_wca": true}}
 		"solve":
-			# LBL 分层解(§6.2/§14):纯计算不执行,3 阶专用。引擎是纯函数,输入已 bake
-			# facelets,播放中调用与 state 同口径。
-			if cube.n != 3:
-				return _err(id, "solve 仅支持 3 阶(当前 n=%d)" % cube.n)
-			if _lbl_solver() == null:
-				return _err(id, "lbl_solver not ready: scripts/lbl_solver.gd 缺失(P2 并行交付中)")
-			var sol := _lbl_solve()
+			# 分层解(§6.2/§14;v7 P7 解禁全阶 2-7):纯计算不执行,统一入口 nxn_solver
+			# (3 阶由其内部转调 lbl_solver)。引擎是纯函数,输入已 bake facelets,
+			# 播放中调用与 state 同口径。
+			if _nxn_solver() == null:
+				return _err(id, "nxn_solver not ready: scripts/nxn_solver.gd 缺失")
+			var sol := _nxn_solve()
 			if not bool(sol.get("ok", false)):  # 引擎失败(ok:false)不得包进 ok:true data
-				return _err(id, String(sol.get("error", "LBL 求解失败")))
+				return _err(id, String(sol.get("error", "求解失败")))
 			return {"id": id, "ok": true, "data": sol}
 		"hint":
-			# 教学提示(§6.2/§14):当前阶段/进度/下一步建议,3 阶专用。
-			if cube.n != 3:
-				return _err(id, "hint 仅支持 3 阶(当前 n=%d)" % cube.n)
-			if _lbl_solver() == null:
-				return _err(id, "lbl_solver not ready: scripts/lbl_solver.gd 缺失(P2 并行交付中)")
-			var h := _lbl_hint()
+			# 教学提示(§6.2/§14;v7 P7 解禁全阶 2-7):当前阶段/进度/下一步建议。
+			if _nxn_solver() == null:
+				return _err(id, "nxn_solver not ready: scripts/nxn_solver.gd 缺失")
+			var h := _nxn_hint()
 			if h.is_empty():
 				return _err(id, "教学引擎无建议(状态异常?)")
 			if (h.get("suggestion", {}) as Dictionary).is_empty():
@@ -217,29 +214,29 @@ func facelets_str() -> String:
 	return out
 
 
-## LBL 引擎惰性加载(命令到达时才 load,勿顶层 preload——并行交付的
-## scripts/lbl_solver.gd 缺失时不得阻塞主场景启动)。约定接口:
-## static LblSolver.solve(facelets: String) -> Dictionary / static LblSolver.hint(facelets: String)。
-## 返回 null = 未就绪(调用方回 ok:false + "lbl_solver not ready")。
-func _lbl_solver():
-	if not ResourceLoader.exists(LBL_SOLVER_PATH):
+## n 阶教学引擎惰性加载(命令到达时才 load,勿顶层 preload——并行交付的
+## scripts/nxn_solver.gd 缺失时不得阻塞主场景启动)。约定接口:
+## static NxnSolver.solve(facelets: PackedByteArray) -> Dictionary / static NxnSolver.hint(facelets: PackedByteArray)。
+## 返回 null = 未就绪(调用方回 ok:false + "nxn_solver not ready")。
+func _nxn_solver():
+	if not ResourceLoader.exists(NXN_SOLVER_PATH):
 		return null
-	return load(LBL_SOLVER_PATH)
+	return load(NXN_SOLVER_PATH)
 
 
-## LBL 求解(§14,引擎即求解器):输入已 bake facelets,输出 {alg, stages:[{name, alg}]×7}。
-## 引擎实现由 scripts/lbl_solver.gd 提供(P2 并行交付),接口以其文件为准:
-## solve/hint 收 PackedByteArray(整合期裁决,引擎口径),故直传 cube.to_facelets()。
-func _lbl_solve() -> Dictionary:
-	var solver = _lbl_solver()
+## n 阶求解(§14,引擎即求解器):输入已 bake facelets,输出 {alg, stages, moves};
+## 段数随阶数(2 阶 3 段 / 3 阶 7 段 / 4-7 阶 9 段),接口以 scripts/nxn_solver.gd 为准。
+func _nxn_solve() -> Dictionary:
+	var solver = _nxn_solver()
 	if solver == null:
 		return {}
 	return solver.solve(cube.to_facelets())
 
 
-## 教学提示(§14):输出 {stage, progress, suggestion:{piece, alg, text}}。
-func _lbl_hint() -> Dictionary:
-	var solver = _lbl_solver()
+## 教学提示(§14):输出 {stage, progress, suggestion:{piece, alg, text}};
+## stage 口径随阶数(2 阶 0..3 / 3 阶 0..7 / 4-7 阶 0..9)。
+func _nxn_hint() -> Dictionary:
+	var solver = _nxn_solver()
 	if solver == null:
 		return {}
 	return solver.hint(cube.to_facelets())

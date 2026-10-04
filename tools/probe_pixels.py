@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
-"""像素级渲染核验:采样 shot_alg_final.png 中各贴纸投影点的颜色,
-与游戏内导出的预期 albedo 比对(6 色最近余弦分类 + 多数投票)。
-用法: python3 tools/probe_pixels.py
+"""像素级渲染核验:采样截图 PNG 中各贴纸投影点的颜色,与游戏内导出的预期
+albedo 比对(6 色最近余弦分类 + 多数投票)。比对对象为 6n² 个贴纸中朝向
+相机的可见子集(由 tests/sticker_probe.gd 导出)。
+用法: python3 tools/probe_pixels.py [--n N]   # N 缺省 3
+  n=3: out/shot_alg_final.png      + out/sticker_probe.json
+  n=4: out/sticker_probe_n4.png    + out/sticker_probe_n4.json
+退出码:全匹配 0;任何失配/无探针非 0。全匹配时打印含 "MATCH 100%" 的行。
 """
+import argparse
 import json
 import sys
 
@@ -45,8 +50,16 @@ def sample_median(img, x, y, r=1):
 
 
 def main():
-    img = Image.open("out/shot_alg_final.png").convert("RGB")
-    with open("out/sticker_probe.json") as f:
+    ap = argparse.ArgumentParser(description="贴纸投影像素比对(可见子集,6n² 口径)")
+    ap.add_argument("--n", type=int, default=3, help="魔方阶数(缺省 3,决定读取的产物)")
+    n = ap.parse_args().n
+    if n < 2:
+        print(f"FAIL  --n={n} 非法(须 >=2)")
+        return 1
+    shot = "out/shot_alg_final.png" if n == 3 else f"out/sticker_probe_n{n}.png"
+    probe = "out/sticker_probe.json" if n == 3 else f"out/sticker_probe_n{n}.json"
+    img = Image.open(shot).convert("RGB")
+    with open(probe) as f:
         probes = json.load(f)
     offsets = [(0, 0), (-9, 0), (9, 0), (0, -9), (0, 9)]
     match = 0
@@ -71,14 +84,19 @@ def main():
             center = sample_median(img, x, y)
             mismatch.append((p, expect, got, f"像素{center} 票{votes}"))
     total = len(probes)
-    print(f"贴纸投影 {total} 个,颜色匹配 {match},不匹配 {len(mismatch)}")
+    print(f"n={n}(总贴纸 {6 * n * n})截图 {shot}:可见投影 {total} 个,"
+          f"颜色匹配 {match},不匹配 {len(mismatch)}")
     for p, exp, got, why in mismatch:
         print(f"  MISMATCH @({p['x']:.0f},{p['y']:.0f}) 格{p['gp']} 法线{p['n']}: "
               f"预期{exp} 实判{got} [{why}]")
-    rate = match / total if total else 0
+    rate = match / total if total else 0.0
     print(f"匹配率 {rate:.1%}")
-    sys.exit(0 if rate >= 0.95 else 1)
+    if total > 0 and match == total:
+        print("MATCH 100%")
+        return 0
+    print(f"FAILED  匹配率 {rate:.1%} != 100%(探针 {total})")
+    return 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

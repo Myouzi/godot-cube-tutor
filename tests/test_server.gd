@@ -13,6 +13,11 @@ var _fail := false
 ## 文件就绪后本测试自动变全测(联调由整合阶段兜底)。
 const NOT_READY := "nxn_solver not ready"
 
+## nxn_solver 熔断条款降级标记(nxn_solver.gd 中心段 :2192/组棱段 :2812/parity 池
+## :3066 等,所有降级 error 恒含『(降级)』;非降级失败如「parity 修正循环后仍
+## 存在(fail loud)」「约化 3 阶段: <lbl 错误>」不含——S9 以此区分两类)。
+const S9_DEGRADE_MARK := "(降级)"
+
 
 func _initialize() -> void:
 	_run()
@@ -56,6 +61,7 @@ func _run() -> void:
 	_test_solve_structure()
 	_test_hint_structure()
 	_test_n4_solve_hint()
+	_test_nxn_protocol_all()
 	_test_wca_marker()
 	_test_validation()
 	_test_seed_validation()
@@ -155,6 +161,88 @@ func _test_n4_solve_hint() -> void:
 		_check(s is Dictionary and s.has("piece") and s.has("alg") and s.has("text"),
 				"S3 suggestion 结构 {piece, alg, text}")
 		_check(s.alg is String and not (s.alg as String).is_empty(), "S3 suggestion.alg 非空")
+	_cube.setup(3)
+
+
+## S9(v7 测试设计 A1,grilling Q1 裁决 b):全阶协议口径补齐——n=2/5/6/7
+## (3/4 由 S1-S3 覆盖;F5 证实 PARITY_ALGS[6] 与 5 阶奇数阶口径此前无 server 级
+## 断言,"5/6 与 4/7 同构"不成立)。5-7 阶按 2026-10-04 探针实测归降级口径:
+## 20 步打乱态中心段必超 CN_STAGE_GUARD=12(nxn_solver.gd:2191-2194
+## 『中心段模板池未覆盖(降级)』,P4b 熔断条款),金标准 TNE-4/TNC-4/TNR-1
+## 对同标记失败同口径接受(带标记降级不判 FAIL)——故 5-7 阶三 seed 依次试解:
+## 第一个 ok:true 的 seed 断言完整结构;ok:false 的 seed 断言 error 带『(降级)』
+## 标记并以 PASS 打印降级原因(熔断记录口径;非降级 error 照旧 FAIL 不掩饰)。
+## hint 容错降级:error 只在段生成为空(真卡点)时携带(打乱态首宏可生成,
+## 本套实测 5-7 阶 hint 均走空分支),suggestion 三键结构由 server 补全恒在;
+## error 空/非空两分支都合法,后者打 PASS 说明降级路径被真实覆盖。hint 断言
+## 固定在第一个 seed 的状态上。
+func _test_nxn_protocol_all() -> void:
+	var cases := [
+		{"n": 2, "segs": 3, "smax": 3},
+		{"n": 5, "segs": 9, "smax": 9},
+		{"n": 6, "segs": 9, "smax": 9},
+		{"n": 7, "segs": 9, "smax": 9},
+	]
+	for c in cases:
+		var n: int = c.n
+		var seeds: Array = [20261004 + n]
+		if n >= 5:  # 5-7 阶中心段降级率高(2026-10-04 探针实测首 seed 全降级),三 seed 采样
+			seeds = [20261004 + n, 20261004 + n + 100, 20261004 + n + 200]
+		var skipped := false
+		for sd_v in seeds:
+			var sd: int = sd_v
+			_cube.setup(n)
+			var rsc := _dispatch("scramble", {"steps": 20, "seed": sd})
+			_check(rsc.ok == true and rsc.data.solved == false,
+					"S9 N=%d seed=%d scramble ok 且非复原态" % [n, sd])
+			var st := _dispatch("state")
+			_check(String(st.data.facelets).length() == 6 * n * n,
+					"S9 N=%d state.facelets 长 %d(6n²)" % [n, 6 * n * n])
+			var r1 := _dispatch("solve")
+			if _maybe_skip(r1, "S9 N=%d solve" % n):
+				skipped = true
+				break
+			if r1.ok:
+				_check(r1.data.has("alg") and r1.data.alg is String
+						and not (r1.data.alg as String).is_empty(),
+						"S9 N=%d seed=%d solve.alg 非空" % [n, sd])
+				_check(r1.data.stages is Array and r1.data.stages.size() == c.segs,
+						"S9 N=%d seed=%d solve.stages 恰 %d 段 实际=%d"
+							% [n, sd, c.segs, (r1.data.stages as Array).size() if r1.data.stages is Array else -1])
+				var ok_shape := true
+				for seg in r1.data.stages:
+					if not (seg is Dictionary and seg.has("name") and seg.name is String
+							and seg.has("alg") and seg.alg is String):
+						ok_shape = false
+				_check(ok_shape, "S9 N=%d seed=%d 每段结构 {name:String, alg:String}" % [n, sd])
+				break  # 第一个全解 seed 即可,后续 seed 不再试
+			var err := String(r1.get("error", ""))
+			_check(err.contains(S9_DEGRADE_MARK),
+					"S9 N=%d seed=%d solve 降级 error 带『%s』标记 实际=%s" % [n, sd, S9_DEGRADE_MARK, err])
+			print("PASS  S9 N=%d seed=%d solve 走降级熔断(%s)" % [n, sd, err])
+		if skipped:
+			continue
+		# hint 断言固定在第一个 seed 的状态上(solve 纯计算不改面,重打乱对齐)
+		_cube.setup(n)
+		_dispatch("scramble", {"steps": 20, "seed": seeds[0]})
+		var r2 := _dispatch("hint")
+		if _maybe_skip(r2, "S9 N=%d hint" % n):
+			continue
+		_check(r2.ok == true, "S9 N=%d hint ok:true" % n)
+		if r2.ok:
+			_check(r2.data.has("stage") and r2.data.stage is int
+					and int(r2.data.stage) >= 0 and int(r2.data.stage) <= c.smax,
+					"S9 N=%d hint.stage ∈ 0..%d 实际=%s" % [n, c.smax, str(r2.data.get("stage", "?"))])
+			_check(r2.data.has("progress"), "S9 N=%d hint 有 progress" % n)
+			var s = r2.data.get("suggestion")
+			_check(s is Dictionary and s.has("piece") and s.has("alg") and s.has("text"),
+					"S9 N=%d suggestion 三键结构" % n)
+			if String(r2.data.get("error", "")).is_empty():
+				_check(s is Dictionary and s.alg is String and not (s.alg as String).is_empty(),
+						"S9 N=%d 无降级时 suggestion.alg 非空" % n)
+			else:
+				print("PASS  S9 N=%d hint 走降级 error 路径(%s…)"
+						% [n, String(r2.data.error).substr(0, 36)])
 	_cube.setup(3)
 
 

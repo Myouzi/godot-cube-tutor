@@ -200,6 +200,124 @@ func _run() -> void:
 	await _wait_frames(4)
 	_check(cube.n == 4 and cube.cubies.size() == 56, "§17.3 N=4 setup(4) 冒烟(cubie 56)")
 	await _save_shot(out_dir + "/shot_n4.png")
+
+	# ---- B1.1 全阶冒烟(2/5/6/7;4 已有 shot_n4):重建稳后断言 cubie 数/复原序/is_solved ----
+	var n_cubies := {2: 8, 5: 98, 6: 152, 7: 218}  # n³−(n−2)³ 外露块数
+	for nn in [2, 5, 6, 7]:
+		main._on_size_selected(nn)
+		await _wait_frames(4)  # 重建稳(既有 shot_n4 同口径)
+		var cells: int = nn * nn
+		var seq := PackedByteArray()
+		seq.resize(6 * cells)
+		for i in 6 * cells:
+			seq[i] = i / cells  # 复原序:面 fi 全为 fi(既有 54 字节写法泛化)
+		_check(cube.n == nn and cube.cubies.size() == int(n_cubies[nn]),
+				"B1.1 N=%d 冒烟(cubie %d)" % [nn, n_cubies[nn]])
+		_check(cube.to_facelets() == seq, "B1.1 N=%d facelets == 复原序(6n²=%d 字节)" % [nn, 6 * cells])
+		_check(cube.is_solved(), "B1.1 N=%d is_solved" % nn)
+		await _save_shot(out_dir + "/shot_n%d.png" % nn)
+
+	# ---- B1.2 教学侧栏按阶重建:n=2 三段 / n=4 九段(最长列表,兼验 ScrollContainer) ----
+	main._on_size_selected(2)
+	main._set_mode(1)  # Mode.TEACH
+	await _wait_frames(4)  # _process 刷一轮侧栏(既有 shot_teach 口径)
+	_check(main._teach_stage_labels.size() == 3, "B1.2 N=2 教学侧栏重建 3 段")
+	_check(main.get_node("UI/TeachPanel").visible, "B1.2 N=2 TeachPanel 可见")
+	await _save_shot(out_dir + "/shot_teach_n2.png")
+	main._set_mode(0)
+	main._on_size_selected(4)
+	main._set_mode(1)
+	await _wait_frames(4)
+	_check(main._teach_stage_labels.size() == 9, "B1.2 N=4 教学侧栏重建 9 段(最长列表)")
+	await _save_shot(out_dir + "/shot_teach_n4.png")
+	main._set_mode(0)
+
+	# ---- B1.3 4 阶宽转中间帧(R 向 [1,3] 两层)----
+	# 期望 28/28(非 32/24):x=1 层 16 槽位中 (1,±1,±1) 4 块为纯内部块,setup 跳过不
+	# 建节点(cube.gd:82-83,4³−2³=56 可见块),故 x=1 层可见 12 + x=3 层 16 = 28 动。
+	# 探针实测:全动画期 moved 恒 28(非时序敏感值),播完 bake 归位 moved=0。
+	# 时序口径:插桩实测重场景+截图回读后单帧可达 ~0.99s,tween 一帧跨完 0.18s 全程并
+	# bake 归位,固定真实窗定点采样必落空(moved=0;仅 time_scale=0.1 抬门槛不够——B1.4
+	# 段前回读两慢帧内 tween 已推进 2×0.099s≥0.18s 播完,定点采样仍落空)。根治:段内
+	# time_scale=0.1 压 tween 有效 delta(慢帧 step≈0.099s,首恢复点即 ~55% 进度)+
+	# 逐帧扫描捕获 moved 首达期望值的动画中间帧(全动画期 moved 恒 28/12,渐进段不误采);
+	# 播完仍捕获不到(极端 >1.8s/帧)则如实 FAIL。段末恢复 1.0。
+	Engine.time_scale = 0.1
+	cube.enqueue_turn(Vector3.RIGHT, [1, 3], -PI / 2)
+	var moved4 := 0
+	var still4 := 0
+	for _scan4 in 400:  # 有界轮询(EXPERIENCE 长轮询口径;缩放后动画 1.8s 真实,400 帧富余)
+		await process_frame
+		moved4 = 0
+		still4 = 0
+		for c in cube.cubies:
+			var expected4: Vector3 = Vector3(c.grid_pos) * 0.5
+			if c.global_position.distance_to(expected4) > 0.02:
+				moved4 += 1
+			else:
+				still4 += 1
+		if moved4 == 28 or not cube.is_animating():
+			break
+	_check(moved4 == 28 and still4 == 28, "B1.3 4 阶宽转中间帧两层 28 块位移,其余 28 块不动(实测 moved=%d still=%d)" % [moved4, still4])
+	Engine.time_scale = 1.0  # 段末恢复,播完等待/后续段落回正常时序
+	await _save_shot(out_dir + "/shot_turn_mid_n4.png")
+	while cube.is_animating():
+		await process_frame
+
+	# ---- B1.4 4 阶内层中间帧(单内层 [1],即 3R 口径)----
+	# 期望 12/44(非 16/40):同 B1.3,内层 4 个 (±1,±1,±1) 槽位是纯内部块,可见 12 块。
+	# 时序口径同 B1.3(time_scale=0.1 + 逐帧扫描捕获 moved==12,段末恢复)。
+	Engine.time_scale = 0.1
+	cube.enqueue_turn(Vector3.RIGHT, [1], -PI / 2)
+	var movedi := 0
+	var stilli := 0
+	for _scani in 400:  # 有界轮询(同 B1.3 口径)
+		await process_frame
+		movedi = 0
+		stilli = 0
+		for c in cube.cubies:
+			var expectedi: Vector3 = Vector3(c.grid_pos) * 0.5
+			if c.global_position.distance_to(expectedi) > 0.02:
+				movedi += 1
+			else:
+				stilli += 1
+		if movedi == 12 or not cube.is_animating():
+			break
+	_check(movedi == 12 and stilli == 44, "B1.4 4 阶内层中间帧 12 块位移,其余 44 块不动(实测 moved=%d still=%d)" % [movedi, stilli])
+	Engine.time_scale = 1.0
+	await _save_shot(out_dir + "/shot_inner_mid_n4.png")
+	while cube.is_animating():
+		await process_frame
+
+	# ---- B1.5 hint 降级持久显示(4 阶)。任务预设「scramble(20) 停中心段必走降级」实测
+	# 不成立:0/90 随机态(裸打乱 70 + 循 1000-3029 跟随建议)hint 均出建议——中心段死锁
+	# 已被 _remap_x2 共轭修复覆盖,_center_segment 不再穷尽。实测可达降级 = 组棱段卡点
+	# (nxn_solver.gd:1660 _edge_hint 穷尽返回 error):seed 4002 打乱后逐步执行引擎建议,
+	# 13 步确定性卡点(两次预跑复核)。断言 ⚠ 持久显示口径 main.gd:747。
+	cube.reset()
+	var rng_b := RandomNumberGenerator.new()
+	rng_b.seed = 4002
+	cube.scramble(20, rng_b)  # 瞬时 bake 无动画;保守等稳(ask 口径)
+	while cube.is_animating():
+		await process_frame
+	var deg := false
+	for step5 in 40:
+		var h5: Dictionary = main._teach_hint()
+		if not String(h5.get("error", "")).is_empty():
+			deg = true
+			break
+		var sug5: Dictionary = h5.get("suggestion", {})
+		if sug5.is_empty():
+			break
+		for st5 in cube.parse_alg(String(sug5.get("alg", ""))):
+			cube.apply_turn(st5.axis, st5.layers, st5.angle)
+	_check(deg, "B1.5 4 阶跟随建议至组棱卡点,hint 降级返回非空 error")
+	main._set_mode(1)
+	await _wait_frames(4)  # _process 刷新 → HintLabel 持久显示降级原因
+	_check(String(main.teach_hint.text).contains("⚠"), "B1.5 HintLabel 持久显示 ⚠ 降级原因")
+	await _save_shot(out_dir + "/shot_hint_degrade.png")
+	main._set_mode(0)
+
 	main._on_size_selected(3)
 
 	c2.free()

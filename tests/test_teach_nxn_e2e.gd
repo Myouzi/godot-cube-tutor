@@ -62,6 +62,12 @@ func _run() -> void:
 	main._on_size_selected(4)
 	await _wait_settled(main)
 	_check(cube.n == 4 and cube.cubies.size() == 56, "选阶 4 阶:setup(4) 完成(cubie 56)")
+	# v7 测试设计 A2:模式门禁(main.gd _refresh,TIMER/TRAIN 限 3 阶;Mode 枚举
+	# FREE/TEACH/TIMER/TRAIN = 0/1/2/3)——F4 类缺口:此前零断言
+	_check(main.mode_btns[2].disabled and main.mode_btns[3].disabled,
+			"模式门禁:4 阶计时/训练按钮禁用")
+	_check(not main.mode_btns[0].disabled and not main.mode_btns[1].disabled,
+			"模式门禁:4 阶自由/教学按钮可用")
 	# 全程 187 步动画(打乱+演示+自动完成),0.18s/步 ≈ 34s 爆预算;走速度滑杆
 	# 真实 UI 入口调至最小档 0.05(main.tscn:122)——动画节奏非本测试验收点
 	main._on_speed_changed(0.05)
@@ -132,6 +138,12 @@ func _run() -> void:
 	await process_frame
 	_check(String(main.teach_hint.text).contains("已复原"),
 		"复原后侧栏显示完成文案")
+
+	# A2 收尾:切回 3 阶门禁恢复(setup(3) 重置魔方,不影响已过断言)
+	main._on_size_selected(3)
+	await _wait_settled(main)
+	_check(not main.mode_btns[2].disabled and not main.mode_btns[3].disabled,
+			"模式门禁:切回 3 阶计时/训练恢复可用")
 
 	print("test_teach_nxn_e2e %s(总耗时 %.1fs)" % ["ALL PASSED" if not _fail else "FAILED",
 			(Time.get_ticks_msec() - t0) / 1000.0])

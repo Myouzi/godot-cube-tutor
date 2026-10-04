@@ -42,6 +42,7 @@ func _run() -> void:
 	await _test_13()
 	_test_14()
 	await _test_15()
+	await _test_16()
 	Engine.time_scale = 1.0
 	print("ALL PASSED")
 	quit(0)
@@ -410,3 +411,47 @@ func _test_15() -> void:
 			ok = false
 			printerr("  play_alg(%s) 实测 != 引擎模拟" % face)
 	_check(ok, "T15 18 记号 play_alg 实测 == facelet 模拟(含全部负轴)")
+
+
+## 测试 16(v7 测试设计 A4):N=4/2 的 undo·restore·reset——F4 缺口:此前仅 3 阶
+## 直接覆盖(T4/T10/T11),n≥4 零断言。宽转一条撤销整层组;restore 以 full_log
+## 清空为完成判据(pop 不变式);层参数为 grid 坐标(4 阶 ±1/±3,2 阶 ±1)。
+func _test_16() -> void:
+	Engine.time_scale = 20.0
+	# N=4 undo:宽转两层(Rw = grid [1,3])一条入栈,undo 整组复原
+	_cube.setup(4)
+	_cube.apply_turn(Vector3.RIGHT, [1, 3], -PI / 2)
+	_check(not _cube.is_solved(), "T16 N=4 宽转两层后非 solved")
+	while not _cube.undo():
+		await process_frame
+	while _cube.is_animating():
+		await process_frame
+	_check(_cube.is_solved() and _cube.moves == 0, "T16 N=4 undo 撤销宽转整层组 -> solved")
+	# N=4 restore:scramble(20) 含内层/宽转(§打乱随机层组)→ 回放至复原
+	_cube.setup(4)
+	seed(20261004)
+	_cube.scramble(20)
+	_check(not _cube.is_solved(), "T16 N=4 打乱(含内层/宽转)后非 solved")
+	_cube.restore()
+	while _cube.is_animating() or not _cube.full_log.is_empty():
+		await process_frame
+	_check(_cube.is_solved() and _cube.moves == 0, "T16 N=4 restore 回放至 solved(full_log 清空)")
+	# N=4 reset:瞬时复原
+	_cube.scramble(20)
+	_cube.reset()
+	_check(_cube.is_solved() and _cube.full_log.is_empty() and _cube.cubies.size() == 56,
+			"T16 N=4 reset 瞬时复原(cubie 56)")
+	# N=2 undo+restore:最小口径(无中心块)
+	_cube.setup(2)
+	_cube.apply_turn(Vector3.RIGHT, [1], -PI / 2)
+	while not _cube.undo():
+		await process_frame
+	while _cube.is_animating():
+		await process_frame
+	_check(_cube.is_solved(), "T16 N=2 undo 单步 -> solved")
+	_cube.apply_turn(Vector3.UP, [1], PI / 2)
+	_cube.apply_turn(Vector3.RIGHT, [1], -PI / 2)
+	_cube.restore()
+	while _cube.is_animating() or not _cube.full_log.is_empty():
+		await process_frame
+	_check(_cube.is_solved() and _cube.cubies.size() == 8, "T16 N=2 restore 回放 -> solved(cubie 8)")

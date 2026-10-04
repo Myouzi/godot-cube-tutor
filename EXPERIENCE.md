@@ -6,6 +6,7 @@
 - 逻辑验证仍用 `godot --headless -s tests/self_test.gd`。
 - 抗锯齿(opengl3 下默认无,斜边锯齿明显):`project.godot` 里 `[rendering] anti_aliasing/quality/msaa_3d=2`(4×)+ `screen_space_aa=1`(FXAA),两行配置,桌面 GPU 零感知开销。
 - UI 随窗口缩放:`[display] window/size/stretch_mode="canvas_items"` + `stretch_aspect="expand"`;默认 disabled 时窗口可拉伸但 UI 元素不缩放。
+- **测试/探针切多阶必须走 `main._on_size_selected(n)` 而非裸 `cube.setup(n)`**(2026-10-04 n=4 探针实测):前者同步拉远相机(距离 1.7n+2,main.gd:328),裸 setup 相机不动 → n=4 贴纸越界出屏,sticker_probe/probe_pixels 必失配。另注意 sticker_probe 导出 json 的 `"n"` 字段是贴纸法线分量,不是阶数,勿混淆。
 
 ## GDScript 坑
 - 类型化数组不能直接字面量赋值:`game.snake = [Vector2i(...)]` 报错。先 `var arr: Array[Vector2i] = [...]` 再赋。
@@ -18,6 +19,8 @@
 - **to_facelets 泛化:坑在下游契约连锁,不在公式本身**(v7 P0)。54 写死改 6n² 只是 `resize(6*n*n)` + 行列枚举随 n(沿用 FACES 表);真正的破坏面是所有按 54 假设的下游——求解引擎按 facelets 长度分派、NDJSON state 契约、mcp_bridge/smoke_bridge 的长度断言、test_server 的 N=4 拒绝断言。两条纪律:①以「3 阶 54 字节与旧版逐字节同构」为锚点,旧金标准(URFDLB 复原序 + 4 角环断言)回归钉死;②长度契约是破坏性协议变更,下游断言翻转必须与实现**同一提交**(v7 把 S3 翻转排 P7 与解禁同提交,审计曾抓出"翻转排 P8"的分期矛盾)。
 - **2 阶态嵌入 3 阶必为非法态(奇偶陷阱,防复发)**:把 2 阶打乱态嵌入 3 阶(棱/中心填复原色)看似"少几块的合法态",实则无解——WCA 2 阶打乱 11 步,每步 90° 面转是角块 4 循环 = 奇置换,11 步叠加角置换恒奇(数值验证 20000/20000);而 3 阶群不变量 **sgn(角置换) = sgn(棱置换)**(每个 90° 面转同时给角与棱各乘一个 4 循环,两符号同步翻转),嵌入态棱置换恒等(偶)而角置换恒奇,违反不变量,不在 3 阶合法态群中(headless 金标准实跑 0/50 复现)。2 阶自身无棱块、不受此约束,嵌入后才受目标群约束。防复发:任何「把 N 阶态嵌入有棱魔方群」的设计,先验 sgn(角)=sgn(棱) 群不变量;v7 已裁决放弃嵌入,2 阶独立解法器(初学者法 3 段)。
 - **借鉴红线:无 LICENSE 仓库只借结构思路,不取数**。lukejacksonn/cube(无 LICENSE)曾致 cfop.json 整体重录;GusEscanda/rubik-cube-solver 同样无 LICENSE,仅借鉴其 methods.json「分段树 × 槽位旋转 × 条件匹配」DSL 思路,公式从公共方法域收集重录(A-2 管线)。dwalton76/rubiks-cube-NxNxN-solver 为 MIT 可合法引用,但其 lookup-table + IDA 机器求解路线与教学引擎不同构,仅作降阶分段结构参照。
+- **降级熔断的可达段在组棱,不在中心**(2026-10-04 构造降级测试态实测):裸打乱 70 态 + 循建议推进 30 态共 0 例中心段降级——x2 共轭修复后 `_center_segment`(nxn_solver.gd:882,贪心→BFS→池→破坏+恢复)总能找到宏,CENTER_TABLE 空(nxn_solver.gd:629)只在四层搜索全穷尽后才被查询。实际可达降级是 `_edge_hint` 穷尽返回 error「组棱段模板池未覆盖(降级)」(nxn_solver.gd:1660-1661),打乱 seed 20 例中 6 例命中;要确定性构造降级断言/截图,选命中的 seed + 循 hint 建议推进到降级发生,勿假设"打乱够多必降级"。
+- **推多阶中间帧位移期望值先排除纯内部块**:n 阶 setup 跳过 (±1,±1,±1) 8 个纯内部块(cube.gd:82-83),n=4 是 4³−2³=56 块而非 64;按「每层 16 块」推期望值必错——x=1 层实际仅 12 块,4 阶宽转两层中间帧 moved 恒 28(非 32)、单内层 12/44。期望值先探针实测再写死(2026-10-04 visual_test B1.3/B1.4 实证)。
 
 ## CI 与自动化(GitHub Actions)
 - headless E2E 等 `_process` 边沿的断言必须**轮询等条件**(上限 60 帧),固定「等 2 帧」在 CI 慢 runner 上时序 flaky(2026-09-25 首跑实证:本地干净 clone 10 测全过、同测试 30 连跑全过、119 case 全量探针全过,CI 仍挂);否定性断言(「不入账」)给 10 帧观察窗,窗口过小会假绿。

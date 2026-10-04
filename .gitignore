@@ -10,3 +10,9 @@ out/
 
 # 工作区内部文件
 .zcode/
+
+# CodeGraph 索引
+.codegraph/
+
+# Godot 4.4+ uid 附属文件(用户裁决不入库)
+*.uid

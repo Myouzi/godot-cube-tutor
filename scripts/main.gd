@@ -2,6 +2,10 @@ extends Node3D
 ## 场景入口(PLAN §5/§13~§17):四态模式机(自由/教学/计时/训练)、键盘/Alt 宽转、
 ## 左键拖层(命中)/orbit(未命中)、教学侧栏(引擎 hint)、计时(timer.gd)、CFOP 训练、UI 接线。
 ## P4 裁量:训练 = 第四态(与三态同组单选,布局切换同构),N≠3 一并禁用(公式表 3 阶专用)。
+## v7 P6(docs/v7-teach-nxn-plan.md):教学管线统一挂 nxn_solver(n=3 由其内部转调
+## lbl_solver,n=2 独立初学者法,4-7 阶降阶法);阶段标签动态生成随引擎表长
+## (2/7/9 段),要领与标题按 n 分表;长段演示 setup 前缀与主体宏分两个播放单元;
+## hint 失败/降级原因持久显示于侧栏 HintLabel,状态栏 flash 作补充。
 
 const FACE_KEYS := {
 	KEY_U: Vector3.UP,
@@ -17,7 +21,25 @@ const DRAG_SENSITIVITY := 0.011  # rad/px:锁轴后像素→角度(§13.6 手感
 enum Mode { FREE, TEACH, TIMER, TRAIN }
 
 const MODE_NAMES := ["自由模式", "教学模式", "计时模式", "训练模式"]
-const STAGE_TIPS := [  # 教学侧栏每阶段一句要领(§14.5,按本项目朝向 U=白 撰写)
+## 教学侧栏每阶段一句要领(v7 P6 按 n 分表,长度 = 引擎阶段表长:
+## 2 阶 3 段 / 3 阶 7 段 / 4-7 阶 9 段;按本项目朝向 U=白 撰写)。
+const STAGE_TIPS_2 := [
+	"把四个白色角块带进白面归位,侧面两色与相邻面颜色对齐。",
+	"把黄层翻成黄面朝下:摆好位置做小鱼公式,一到两次。",
+	"黄层四个角轮换归位:顺着转圈换,六面同色即复原。",
+]
+const STAGE_TIPS_3 := [
+	"在顶层拼出白色十字,每条棱的侧面颜色与中心块对齐。",
+	"把四个白色角块带进顶层归位,侧面两色与相邻中心对齐。",
+	"把不带黄色的四条棱插入中层(先对齐侧面中心再插槽)。",
+	"底面拼黄色十字:黄点变黄线、黄线变黄十字。",
+	"用小鱼公式把底面九格全部变黄。",
+	"底面四个角轮换对位:先把位置正确的角摆好,其余转圈换。",
+	"最后三条棱轮换归位,完成整个复原。",
+]
+const STAGE_TIPS_NXN := [  # 降阶法九段:前两段为降阶专属,后七段沿用层先法口径
+	"先把六个面的中心块各自拼成同色(一次一层,拼好的面不要破坏)。",
+	"把 12 条棱的棱块两两配对组齐(偶数阶若遇奇偶错位,按建议做修正公式)。",
 	"在顶层拼出白色十字,每条棱的侧面颜色与中心块对齐。",
 	"把四个白色角块带进顶层归位,侧面两色与相邻中心对齐。",
 	"把不带黄色的四条棱插入中层(先对齐侧面中心再插槽)。",
@@ -51,11 +73,8 @@ const TRAIN_CATS := ["f2l", "oll", "pll"]
 @onready var help_label: Label = $UI/HelpLabel
 @onready var time_label: Label = $UI/TimeLabel
 @onready var teach_panel: PanelContainer = $UI/TeachPanel
-@onready var teach_stage_labels: Array = [
-	$UI/TeachPanel/VBox/Stage0, $UI/TeachPanel/VBox/Stage1, $UI/TeachPanel/VBox/Stage2,
-	$UI/TeachPanel/VBox/Stage3, $UI/TeachPanel/VBox/Stage4, $UI/TeachPanel/VBox/Stage5,
-	$UI/TeachPanel/VBox/Stage6,
-]
+@onready var teach_title: Label = $UI/TeachPanel/VBox/Title
+@onready var stage_box: VBoxContainer = $UI/TeachPanel/VBox/Scroll/StageBox
 @onready var teach_tip: Label = $UI/TeachPanel/VBox/TipLabel
 @onready var teach_hint: Label = $UI/TeachPanel/VBox/HintLabel
 @onready var teach_demo_btn: Button = $UI/TeachPanel/VBox/BtnRow/DemoBtn
@@ -80,7 +99,7 @@ const TRAIN_CATS := ["f2l", "oll", "pll"]
 var _mode := Mode.FREE
 var _timer = load("res://scripts/timer.gd").new()  # 计时逻辑(PLAN §15)
 var _train_stats = load("res://scripts/train_stats.gd").new()  # 训练每案例统计(A-8)
-var _lbl  # LBL 引擎(lazy load;缺失时教学入口降级提示)
+var _nxn  # 教学引擎 nxn_solver(v7 P6 lazy load;缺失时教学入口降级提示)
 var _cfop := {}  # data/cfop.json:{"f2l":[...], "oll":[...], "pll":[...]}
 var _train_cat := "f2l"
 var _train_case := {}  # 当前训练 case(空 = 未出题)
@@ -91,6 +110,9 @@ var _auto_stage := 0  # 「自动完成本阶段」目标阶段(0 = 关闭)
 var _teach_fp := ""  # 状态指纹:facelets 未变则 hint/高亮不重算
 var _teach_cache := {}  # 状态指纹:facelets 未变则 hint/高亮不重算
 var _teach_best := 0  # 本局达到过的最高阶段(回退红显用)
+var _teach_err := ""  # 侧栏持久显示的失败/降级原因(边沿检测:变更才 flash)
+var _demo_pending := ""  # 长段演示第二单元(主体宏;第一单元队列清零后自动续播)
+var _teach_stage_labels: Array = []  # 动态生成的阶段标签(随 n 重建,v7 P6)
 var _was_solved := true  # is_solved 边沿检测(计时停表/训练完成)
 
 var _dist := 7.1
@@ -131,6 +153,7 @@ func _ready() -> void:
 	for cat in train_cat_btns:
 		train_cat_btns[cat].pressed.connect(_set_train_cat.bind(cat))
 	_load_cfop()
+	_rebuild_stage_labels()  # 首建阶段标签(n=3,引擎表长七段)
 	_update_mode_ui()
 
 
@@ -194,6 +217,7 @@ func _wca_scramble_alg() -> String:
 ## 提示省略步数——full_log 含玩家历史,不能拿来当本次步数,否则数字虚报)。
 func _on_scramble_entered(alg: String, rand_steps := -1) -> void:
 	_teach_best = 0  # 新局:回退红基准清零(§14.2 红语义只针对本局)
+	_demo_cancel()  # 新局:长段演示续播作废
 	if _mode == Mode.TIMER:
 		_timer.enter_scrambled()
 		_was_solved = false
@@ -223,17 +247,20 @@ func _on_scramble_entered(alg: String, rand_steps := -1) -> void:
 ## MCP restore/reset 到达:当前计时作废(§15.1;防 running 中经 is_solved 边沿误记成绩)
 func _on_server_invalidated() -> void:
 	_timer.invalidate()
+	_demo_cancel()  # 状态已变,长段演示续播作废
 	scramble_seq.text = ""
 
 
 func _on_undo() -> void:
 	if cube.undo():
 		_timer.on_undo()  # 显式入口:不起表不打断(§15.1)
+	_demo_cancel()  # 状态已变,长段演示续播作废
 	undo_btn.release_focus()
 
 
 func _on_reset() -> void:
 	cube.reset()
+	_demo_cancel()
 	_timer.invalidate()
 	_teach_best = 0  # 新局:回退红基准清零
 	scramble_seq.text = ""
@@ -247,6 +274,7 @@ func _on_play() -> void:
 	# §6.2 G5:UI 与分发器共用同一校验函数(含 ≤2000 字符/≤300 token 边界;小写随阶数)
 	if server.validate_alg(alg_edit.text) != "" or cube.play_alg(alg_edit.text) < 0:
 		_flash("公式非法:U D L R F B + ' + 2(小写宽转仅 4 阶以上)")
+	_demo_cancel()  # 状态将变,长段演示续播作废
 	play_btn.release_focus()
 
 
@@ -267,11 +295,12 @@ func _set_mode(m: int) -> void:
 
 
 func _update_mode_ui() -> void:
-	var can3: bool = cube.n == 3  # 教学/计时/训练 3 阶专用(§11)
+	# v7 P6:教学全阶开放(引擎统一入口 2-7 阶,n=3 内部转调 lbl);计时/训练维持 3 阶专用
+	# (§11:计时口径与 CFOP 公式表 3 阶专用)
 	for m in mode_btns:
-		mode_btns[m].disabled = (m != Mode.FREE and not can3)
+		mode_btns[m].disabled = (m == Mode.TIMER or m == Mode.TRAIN) and cube.n != 3
 		mode_btns[m].set_pressed_no_signal(m == _mode)
-	if _mode != Mode.FREE and not can3:
+	if _mode != Mode.FREE and mode_btns[_mode].disabled:
 		_mode = Mode.FREE  # 阶数切走后当前模式不可用 → 回自由
 	teach_panel.visible = _mode == Mode.TEACH
 	timer_panel.visible = _mode == Mode.TIMER
@@ -305,6 +334,8 @@ func _on_size_selected(id: int) -> void:
 	_train_case_cat = ""
 	_train_done = false
 	_auto_stage = 0
+	_demo_cancel()  # 长段演示续播作废(状态已重置)
+	_rebuild_stage_labels()  # v7 P6 钩子:阶段标签/要领/标题随阶数重建(引擎表长 2/7/9 段)
 	_update_mode_ui()
 	_flash("已切换到 %d 阶(状态重置)" % cube.n)
 
@@ -313,6 +344,7 @@ func _on_size_selected(id: int) -> void:
 
 func _on_player_action() -> void:
 	_timer.on_player_turn()  # 仅 SCRAMBLED 态起表(timer 内部判定)
+	_demo_cancel()  # 玩家已动手:长段演示续播作废(不做播放中自由中断,间歇期同此)
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
@@ -523,24 +555,117 @@ func _reset_view() -> void:
 	_update_cam()
 
 
-# ---- 教学侧栏(§14.5)----
+# ---- 教学侧栏(§14.5;v7 P6 统一挂 nxn_solver)----
 
-func _lbl_solver():
-	if _lbl == null:
-		if not ResourceLoader.exists("res://scripts/lbl_solver.gd"):
+func _teach_solver():
+	if _nxn == null:
+		if not ResourceLoader.exists("res://scripts/nxn_solver.gd"):
 			return null
-		_lbl = load("res://scripts/lbl_solver.gd")
-	return _lbl
+		_nxn = load("res://scripts/nxn_solver.gd")
+	return _nxn
+
+
+## 当前阶数的阶段名表(单一事实源 = 引擎:n=2 三段 / n=3 随 lbl 七段(引擎内部
+## 转调同源)/ n≥4 九段契约;长度即阶段总数,UI 不再写死哨兵)。
+func _stage_names() -> Array:
+	if cube.n == 3:
+		return load("res://scripts/lbl_solver.gd").STAGE_NAMES
+	var s = _teach_solver()
+	if s == null:
+		return []
+	return s.STAGE_NAMES if cube.n == 2 else s.STAGE_NAMES_NXN
+
+
+## 当前阶数的要领表(长度与阶段名表一致)。
+func _teach_tips() -> Array:
+	if cube.n == 2:
+		return STAGE_TIPS_2
+	if cube.n == 3:
+		return STAGE_TIPS_3
+	return STAGE_TIPS_NXN
+
+
+## 侧栏标题按 n 切方法名:2 阶初学者法 / 3 阶层先法 / 4-7 阶降阶法。
+func _method_name() -> String:
+	if cube.n == 2:
+		return "初学者法"
+	if cube.n == 3:
+		return "层先法"
+	return "降阶法"
+
+
+## 重建阶段标签(v7 P6:静态七Label → 空容器动态生成;ready 首建 + 切阶钩子,
+## _teach_refresh 侧自愈兜底)。标签数随引擎阶段表长(2/7/9 段),列表外包
+## ScrollContainer 防高阶段溢出。
+func _rebuild_stage_labels() -> void:
+	var names: Array = _stage_names()
+	for l in _teach_stage_labels:
+		stage_box.remove_child(l)
+		l.queue_free()
+	_teach_stage_labels.clear()
+	var total: int = names.size()
+	for i in total:
+		var lab := Label.new()
+		lab.text = "%d. %s" % [i + 1, String(names[i])]
+		stage_box.add_child(lab)
+		_teach_stage_labels.append(lab)
+	teach_title.text = "教学进度(%s)" % _method_name()
+
+
+## 长段演示拆分(v7 P6 裁决 Q2):建议串开头的 U/D 摆位前缀(引擎宏池 U^a D^b
+## 摆位约定、2 阶 D^j 预对位同型)作为第一播放单元先行演示,其余为主体宏。
+## 拆分只改变播放节奏、不改变记号序列;不足 4 token 或拆后主体 <2 token 不拆。
+func _demo_units(alg: String) -> Array:
+	var toks := alg.split(" ", false)
+	if toks.size() < 4:
+		return [alg]
+	var setup: Array = []
+	for t in toks:
+		if t in ["U", "U'", "U2", "D", "D'", "D2"]:
+			setup.append(t)
+		else:
+			break
+	if setup.is_empty() or toks.size() - setup.size() < 2:
+		return [alg]
+	return [" ".join(setup), " ".join(toks.slice(setup.size()))]
+
+
+## 长段演示续播作废(任何玩家主动操作/MCP 状态变更后,主体宏不再是有效建议)。
+func _demo_cancel() -> void:
+	if not _demo_pending.is_empty():
+		_demo_pending = ""
+		_flash("演示已中止(状态已变),可重新点「演示下一步」")
 
 
 func _on_teach_demo() -> void:
 	var h := _teach_hint()
-	if h.is_empty() or String(h.get("suggestion", {}).get("alg", "")).is_empty():
-		_flash("引擎暂无建议")
+	var sug: Dictionary = h.get("suggestion", {})
+	var alg := String(sug.get("alg", ""))
+	if h.is_empty() or alg.is_empty():
+		var err := String(h.get("error", ""))
+		_flash("引擎暂无建议" if err.is_empty() else "教学引擎:%s" % err)
 		return
-	if cube.play_alg(String(h.suggestion.alg)) < 0:
+	var units: Array = _demo_units(alg)
+	if cube.play_alg(String(units[0])) < 0:
 		_flash("演示入队失败(播放中?)")
+		return
+	_demo_pending = ""
+	if units.size() == 2:
+		# 播放单元 2 挂起,队列清零后由 _process 续播(段内有间歇;分段叙事)
+		_demo_pending = String(units[1])
+		teach_hint.text = "演示 1/2(摆位):%s\n停顿后自动接 2/2(主体):%s\n要领:%s" \
+				% [units[0], units[1], String(sug.get("text", ""))]
 	teach_demo_btn.release_focus()
+
+
+## 长段演示第二单元续播(播放单元 1 队列清零后的首个稳定帧调用)。
+func _demo_continue() -> void:
+	var rest := String(_demo_pending)
+	_demo_pending = ""  # 先清:续播失败不重试
+	if cube.play_alg(rest) < 0:
+		_flash("演示续播失败(状态已变?)")
+		return
+	teach_hint.text = "演示 2/2(主体):%s" % rest
 
 
 func _on_teach_auto() -> void:
@@ -549,8 +674,9 @@ func _on_teach_auto() -> void:
 		_auto_stage = 0
 		teach_auto_btn.text = "自动完成本阶段"
 		return
+	_demo_cancel()  # 自动接管演示间歇,续播作废
 	var sc: int = _teach_stage()
-	if sc >= 7:
+	if sc >= _stage_names().size():
 		_flash("已复原,无需自动")
 		return
 	_auto_stage = 1 if sc == 0 else sc + 1
@@ -559,14 +685,14 @@ func _on_teach_auto() -> void:
 
 
 func _teach_stage() -> int:
-	var s = _lbl_solver()
+	var s = _teach_solver()
 	if s == null:
 		return 0
 	return s.stage_check(cube.to_facelets())
 
 
 func _teach_hint() -> Dictionary:
-	var s = _lbl_solver()
+	var s = _teach_solver()
 	if s == null:
 		return {}
 	var fp := str(hash(cube.to_facelets()))  # 全局 hash():PackedByteArray 无 hash 方法
@@ -579,16 +705,22 @@ func _teach_hint() -> Dictionary:
 
 
 ## 教学侧栏刷新:高亮(绿完成/蓝当前/红回退)+ 当前阶段要领 + 引擎建议。
+## v7 P6 失败语义:hint 的 error 字段(失败/降级原因)持久显示于 HintLabel,
+## 状态栏 flash 作补充(边沿触发:原因变更才 flash,防每帧刷屏)。
 func _teach_refresh() -> void:
 	if _mode != Mode.TEACH or cube.is_animating():
 		return
-	var s = _lbl_solver()
+	var s = _teach_solver()
 	if s == null:
-		teach_hint.text = "教学引擎未就绪(scripts/lbl_solver.gd 缺失)"
+		teach_hint.text = "教学引擎未就绪(scripts/nxn_solver.gd 缺失)"
 		return
+	var names: Array = _stage_names()
+	if _teach_stage_labels.size() != names.size():
+		_rebuild_stage_labels()  # 自愈兜底:标签数与引擎表长不一致(如直接 cube.setup)
 	var sc: int = _teach_stage()
 	_teach_best = maxi(_teach_best, sc)
-	for i in 7:
+	var total: int = names.size()
+	for i in total:
 		var st := i + 1
 		var color := Color(0.6, 0.6, 0.6)
 		var mark := "    "
@@ -601,18 +733,28 @@ func _teach_refresh() -> void:
 		elif st <= _teach_best:
 			color = Color(0.9, 0.35, 0.3)  # 红 = 回退(曾完成现在未完成)
 			mark = "↩ "
-		teach_stage_labels[i].add_theme_color_override("font_color", color)
-		teach_stage_labels[i].text = "%d.%s%s" % [st, mark, s.STAGE_NAMES[i]]
-	teach_tip.text = STAGE_TIPS[mini(sc, 6)]
+		_teach_stage_labels[i].add_theme_color_override("font_color", color)
+		_teach_stage_labels[i].text = "%d.%s%s" % [st, mark, String(names[i])]
+	teach_tip.text = String(_teach_tips()[mini(sc, total - 1)])
 	var h := _teach_hint()
 	var sug: Dictionary = h.get("suggestion", {})
-	if sc >= 7:
+	var err := String(h.get("error", ""))
+	if sc >= total:
 		teach_hint.text = "🎉 已复原!魔方完成。"
+		_teach_err = ""
+	elif sug.is_empty() and not err.is_empty():
+		# 失败/降级(熔断条款 fail loud):原因持久显示,flash 补充一次
+		teach_hint.text = "⚠ %s\n(该卡点暂无已验证建议,可自由练习)" % err
+		if err != _teach_err:
+			_flash("教学引擎:%s" % err)
+		_teach_err = err
 	elif sug.is_empty():
 		teach_hint.text = "引擎暂无建议(状态异常?)"
+		_teach_err = ""
 	else:
 		teach_hint.text = "建议(%s):%s\n公式:%s" % [String(sug.get("piece", "")),
 				String(sug.get("text", "")), String(sug.get("alg", ""))]
+		_teach_err = ""
 
 
 # ---- 计时模式(§15)----
@@ -801,12 +943,16 @@ func _process(_delta: float) -> void:
 	if _mode == Mode.TEACH:
 		if _auto_stage > 0 and not cube.is_animating() and not cube.is_programmatic():
 			_auto_step()
+		elif not _demo_pending.is_empty() and not cube.is_animating() \
+				and not cube.is_programmatic():
+			_demo_continue()  # 长段演示:单元 1 队列清零后续播单元 2(段内间歇)
 		else:
 			_teach_refresh()
 
 
 ## 「自动完成本阶段」驱动(§14.5):每轮动画结束后追加一条引擎建议,直至阶段通过。
 func _auto_step() -> void:
+	_demo_pending = ""  # 自动接管播放节奏,挂起的演示续播作废(不 flash,静默清)
 	var sc: int = _teach_stage()
 	if sc >= _auto_stage:
 		_auto_stage = 0
@@ -820,4 +966,5 @@ func _auto_step() -> void:
 	if alg.is_empty() or cube.play_alg(alg) < 0:
 		_auto_stage = 0
 		teach_auto_btn.text = "自动完成本阶段"
-		_flash("自动中止:引擎无建议")
+		var err := String(h.get("error", ""))
+		_flash("自动中止:%s" % (err if not err.is_empty() else "引擎无建议"))

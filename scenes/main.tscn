@@ -179,33 +179,16 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "教学进度(层先法)"
 
-[node name="Stage0" type="Label" parent="UI/TeachPanel/VBox"]
+[node name="Scroll" type="ScrollContainer" parent="UI/TeachPanel/VBox"]
+custom_minimum_size = Vector2(0, 110)
 layout_mode = 2
-text = "1. 白十字"
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
-[node name="Stage1" type="Label" parent="UI/TeachPanel/VBox"]
+[node name="StageBox" type="VBoxContainer" parent="UI/TeachPanel/VBox/Scroll"]
 layout_mode = 2
-text = "2. U 层四角"
-
-[node name="Stage2" type="Label" parent="UI/TeachPanel/VBox"]
-layout_mode = 2
-text = "3. 中层四棱"
-
-[node name="Stage3" type="Label" parent="UI/TeachPanel/VBox"]
-layout_mode = 2
-text = "4. D 面十字"
-
-[node name="Stage4" type="Label" parent="UI/TeachPanel/VBox"]
-layout_mode = 2
-text = "5. D 面全黄"
-
-[node name="Stage5" type="Label" parent="UI/TeachPanel/VBox"]
-layout_mode = 2
-text = "6. D 层角位"
-
-[node name="Stage6" type="Label" parent="UI/TeachPanel/VBox"]
-layout_mode = 2
-text = "7. D 层棱位"
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
 
 [node name="TipLabel" type="Label" parent="UI/TeachPanel/VBox"]
 layout_mode = 2
@@ -215,7 +198,6 @@ text = ""
 
 [node name="HintLabel" type="Label" parent="UI/TeachPanel/VBox"]
 layout_mode = 2
-size_flags_vertical = 3
 autowrap_mode = 2
 theme_override_font_sizes/font_size = 14
 text = ""

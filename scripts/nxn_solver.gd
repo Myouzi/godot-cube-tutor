@@ -1797,6 +1797,57 @@ static func _cn_ensure(n: int) -> Dictionary:
 				perm6 = _perm_compose(u_perms[ua5], at5.perm)
 				pre5 = _u_pow(ua5) + " "
 			a_pool1.append(_cn_entry(pre5 + String(at5.alg), perm6, pc))
+	# B 族收尾两面宏(P2 2026-10-05,center-macro-impl-design.md §3,「收集的」模式)。
+	# 来源登记(§3.4-1;Bader 页查证无开放许可 usable=false 后的公共域渠道):
+	# - 交换子构造规则:speedsolving wiki "Commutators" 页(访问 2026-10-05)
+	#   ——[X,Y]=XYX'Y' 两正交交换产生成组互换/纯 3-cycle 是数学事实;
+	#   B1=[dL2,dB2]×2(对面列互换)、B2=[B2, dR' dF dR](相邻两面交换)按该规则
+	#   以引擎记号逐轨道档重录(非 Bader 页序列转译);
+	# - 对面中心互换的社区通行形式佐证:speedsolving.com 论坛公共帖
+	#   「Intuitive 4x4 Method with Parity Avoidance」(2019-03-24,页 2)
+	#   「I also use r2 u2 r2 u2 to swap two connected centers on opposite faces」
+	#   (2026-10-05 检索引文;B1 为其内层单轨道档同族展开);
+	# - William Bader 页(https://williambader.com/museum/cubes/cubes.html)经查证
+	#   无任何开放许可(2026-10-05,usable=false),公式序列不逐字转译,仅作存在性
+	#   与机理参照(survey §5.1);许可法理沿 tools/rebuild_cfop.py 重录先例:
+	#   算法序列=操作事实不受版权保护,自有结构输出 + 来源登记;
+	# - 语义与实测环:设计文档 §3.2/§3.3/§5(V7-V10,独立验证员 2026-10-05 实测;
+	#   本次管线探针复证:B1 全档 moved=6 keeps=-RF-LB touch=UD,B2 全档
+	#   moved=3 纯 3-cycle keeps=15,复合/数字形式对拍同环,布置终态断言全解)。
+	# 轨道档 d∈{3..n-1}(数字内层自面计数);中央档实测自消(B1 n=5 d=3 / n=7
+	# d=4 = IDENTITY,§3.2 预言,G1 滤);B3 三面循环不单收(§3.5,B2×2 由
+	# bfs_atoms 深度 2 组合承载);接入:择优域 a_pool1(方案 B 架构,§3.5 的
+	# pool1 接入点)+ bfs_atoms + end_atoms(无前缀姿态全量,收尾域主力)。
+	var b_specs: Array = []   # [骨架串, 族名]
+	for d in range(3, n):
+		b_specs.append(["%dL2 %dB2 %dL2 %dB2" % [d, d, d, d], "B1"])
+		b_specs.append(["B2 %dR' %dF %dR B2 %dR' %dF' %dR" % [d, d, d, d, d, d], "B2"])
+	var b_atoms: Array = []
+	for bsp: Array in b_specs:
+		for bk in 4:
+			for bx in 2:
+				var balg: String = _rotate_y(String(bsp[0]), bk)
+				if bx == 1:
+					balg = _remap_x2(balg)
+				var bperm: PackedInt32Array = _cn_id_perm(balg, n, cells)
+				var bmv := 0
+				for bi in bperm.size():
+					if bperm[bi] != bi:
+						bmv += 1
+				if bmv == 0:
+					continue   # G1:中央档自消(§3.2)
+				var ben: Dictionary = _cn_entry(balg, bperm, pc)
+				if String(bsp[1]) == "B1":
+					# G2:B1 语义 = 动 U/D 两面保 R/F/L/B(touch=UD 跨姿态稳定)
+					assert(int(ben.touch) == 9,
+							"B 族 B1 骨架 %s 展开 %s touch=%d 非 UD" % [bsp[0], balg, int(ben.touch)])
+				else:
+					# G2:B2 语义 = 纯 3-cycle(moved==3 即单环,共轭不变)
+					assert(bmv == 3,
+							"B 族 B2 骨架 %s 展开 %s moved=%d 非纯 3-cycle" % [bsp[0], balg, bmv])
+				b_atoms.append(ben)
+	for ben2: Dictionary in b_atoms:
+		a_pool1.append(ben2)
 	# 摆位缀置换(conn;供 BFS 摆位域/end_atoms;池2 闭环已删——其效果 =
 	# bfs_atoms 深度 2 子集,2026-10-04 性能实证:坎段全扫 pool2+pool2b ~6 万条
 	# 为单态分钟级热点,且层 a 0/33 全降级下未贡献通过)
@@ -1820,6 +1871,8 @@ static func _cn_ensure(n: int) -> Dictionary:
 		bfs_atoms.append(_cn_entry(cn3, conn[cn3], pc))
 	for en7: Dictionary in a_atoms:
 		bfs_atoms.append(en7.entry)   # A 族无前缀姿态显式纳入 BFS/修复域(§2.4-2)
+	for ben3: Dictionary in b_atoms:
+		bfs_atoms.append(ben3)        # B 族无前缀姿态纳入(B2×2 三面循环组合,B3 §3.5)
 	# conj1 = 破口域(共轭原子 × U^a D^b;探针 5 配方:可修复破口集中在共轭效果)
 	var conj1: Array = []
 	for en2: Dictionary in pool1:
@@ -1841,6 +1894,8 @@ static func _cn_ensure(n: int) -> Dictionary:
 	for at6: Dictionary in a_atoms:
 		if String(at6.fam) == "T" or (String(at6.fam) == "Q" and int(at6.entry.keeps) == 63):
 			end_atoms.append(at6.entry)
+	for ben4: Dictionary in b_atoms:
+		end_atoms.append(ben4)        # B 族收尾域主力(§3.5:无前缀姿态直接 append)
 	_cn_ctx[n] = {"cells": cells, "pc": pc, "m": cells.size(), "pool1": pool1,
 			"a_pool1": a_pool1, "conj1": conj1,
 			"bfs_atoms": bfs_atoms, "end_atoms": end_atoms,

@@ -1750,15 +1750,6 @@ static func _cn_ensure(n: int) -> Dictionary:
 	var conn := {}
 	for cn in ["U", "U'", "U2", "D", "D'", "D2", "3U", "3U'", "3U2"]:
 		conn[cn] = _cn_id_perm(cn, n, cells)
-	# u1 = pool1 的 U 前缀子集 + 摆位缀原子(BFS/修复域:D 前缀留给破口域,域小搜索才深)
-	var u1: Array = []
-	for en: Dictionary in pool1:
-		var alga: String = String(en.alg)
-		if not (alga.begins_with("D ") or alga.begins_with("D2 ") or alga.begins_with("D' ")
-				or alga.contains(" D ") or alga.contains(" D2 ") or alga.contains(" D' ")):
-			u1.append(en)
-	for cn2 in ["U", "U'", "U2", "D", "D'", "D2", "3U", "3U'", "3U2"]:
-		u1.append(_cn_entry(cn2, conn[cn2], pc))
 	# bfs_atoms = 无前缀原子 + 摆位缀(BFS/修复域;前缀展开域在深度 2 全遍历口径下
 	# 覆盖率不足——2026-10-03 探针 8:169² 全遍历 252ms,有解路径 2 条全在复合深度 2)
 	var bfs_atoms: Array = []
@@ -1791,7 +1782,7 @@ static func _cn_ensure(n: int) -> Dictionary:
 	for cn4: String in conn:
 		end_atoms.append(_cn_entry(cn4, conn[cn4], pc))
 	_cn_ctx[n] = {"cells": cells, "pc": pc, "m": cells.size(), "pool1": pool1,
-			"u1": u1, "conj1": conj1,
+			"conj1": conj1,
 			"bfs_atoms": bfs_atoms, "end_atoms": end_atoms,
 			"cap": 800}
 	return _cn_ctx[n]

@@ -1676,8 +1676,8 @@ static func _edge_hint(facelets: PackedByteArray) -> Dictionary:
 ##   池1 域内搜索覆盖(深度 ≤ CN_BFS_DEPTH),更深的死锁走降级(P4b 熔断条款)。
 ## n=4 中心段(P3)代码路径零改动,见上方专用区段。
 
-const CN_STAGE_GUARD := 12
-const CN_MOVE_LIMIT := 50
+const CN_STAGE_GUARD := 150
+const CN_MOVE_LIMIT := 600
 const CN_BFS_NODES := 3000
 const CN_BFS_DEPTH := 2
 const CN_BFR_CANDS := 4
@@ -1744,6 +1744,59 @@ static func _cn_ensure(n: int) -> Dictionary:
 				perm = _perm_compose(u_perms[ua], perm)
 				pre = _u_pow(ua) + " "
 			pool1.append(_cn_entry(pre + String(at.alg), perm, pc))
+	# A 族三子族入池(P1 2026-10-05,center-macro-impl-design.md §2.1/§2.2「生成的」
+	# 模式):S 条带三步 dR F2 dR'(单层 d∈3..n-1 含奇阶中央层 / 宽层 dRw d∈2..n-2)/
+	# T 异带交换子 dR F eR F' dR' F eR' F'(有序对 d≠e,实测纯 3-cycle)/
+	# Q 短交换子 dR F2 dR' F2(=[dR,F2]),同款 y4×x2 姿态 × U^a 前缀展开。
+	# G1 非恒等门仅约束新族(现有 pool1 含恒等条目是既成事实,不动,§2.2 G1 注);
+	# G2 形态登记:T 断言纯 3-cycle(moved==3 即单环 3-cycle),S/Q 不断言仅登记
+	# (moved/keeps/touch 由 _cn_entry 原生携带)。新族记号不含 D(y 旋转 U/D 不变、
+	# x2 映射 U↔D 而骨架无 U token),不进 conj1 破口域;无前缀姿态经下方 bfs_atoms
+	# 筛选自动纳入 BFS/修复域(§2.4-2/§2.4-4)。
+	var a_specs: Array = []   # [骨架串, 族名]
+	for d in range(3, n):
+		a_specs.append(["%dR F2 %dR'" % [d, d], "S"])
+	for d in range(2, n - 1):
+		a_specs.append(["%dRw F2 %dRw'" % [d, d], "S"])
+	for d in range(3, n):
+		for e in range(3, n):
+			if d != e:
+				a_specs.append(["%dR F %dR F' %dR' F %dR' F'" % [d, e, d, e], "T"])
+	for d in range(3, n):
+		a_specs.append(["%dR F2 %dR' F2" % [d, d], "Q"])
+	var a_atoms: Array = []   # 无前缀 8 姿态 {alg, perm, fam, entry}
+	for asp: Array in a_specs:
+		for k5 in 4:
+			for xr5 in 2:
+				var alg5: String = _rotate_y(String(asp[0]), k5)
+				if xr5 == 1:
+					alg5 = _remap_x2(alg5)
+				var perm5: PackedInt32Array = _cn_id_perm(alg5, n, cells)
+				var moved5 := 0
+				for i5 in perm5.size():
+					if perm5[i5] != i5:
+						moved5 += 1
+				if moved5 == 0:
+					continue
+				if String(asp[1]) == "T":
+					assert(moved5 == 3,
+							"A 族 T 骨架 %s 展开 %s moved=%d 非纯 3-cycle" % [asp[0], alg5, moved5])
+				a_atoms.append({"alg": alg5, "perm": perm5, "fam": String(asp[1]),
+						"entry": _cn_entry(alg5, perm5, pc)})
+	# A 族 pool1 条目独立成池(2026-10-05 方案 B,§8 风险 1 解剖裁决):A 族若
+	# append 进 pool1 尾部,first-hit 贪心永不评分它们(池序死区,解剖:n=5
+	# seed=20261009 的 11/19 段 A 族 k=1000-2003 严格胜出却零参与)——故单独
+	# 成 a_pool1 供 _cn_greedy 择优段全扫;族标签 = 数组本身(数据结构层,
+	# 无运行期字符串判定)。旧池 pool1 保持纯旧条目,first-hit 路径零变化。
+	var a_pool1: Array = []
+	for at5: Dictionary in a_atoms:
+		for ua5 in 4:
+			var perm6: PackedInt32Array = at5.perm
+			var pre5 := ""
+			if ua5 > 0:
+				perm6 = _perm_compose(u_perms[ua5], at5.perm)
+				pre5 = _u_pow(ua5) + " "
+			a_pool1.append(_cn_entry(pre5 + String(at5.alg), perm6, pc))
 	# 摆位缀置换(conn;供 BFS 摆位域/end_atoms;池2 闭环已删——其效果 =
 	# bfs_atoms 深度 2 子集,2026-10-04 性能实证:坎段全扫 pool2+pool2b ~6 万条
 	# 为单态分钟级热点,且层 a 0/33 全降级下未贡献通过)
@@ -1765,6 +1818,8 @@ static func _cn_ensure(n: int) -> Dictionary:
 		bfs_atoms.append(en3)
 	for cn3: String in conn:
 		bfs_atoms.append(_cn_entry(cn3, conn[cn3], pc))
+	for en7: Dictionary in a_atoms:
+		bfs_atoms.append(en7.entry)   # A 族无前缀姿态显式纳入 BFS/修复域(§2.4-2)
 	# conj1 = 破口域(共轭原子 × U^a D^b;探针 5 配方:可修复破口集中在共轭效果)
 	var conj1: Array = []
 	for en2: Dictionary in pool1:
@@ -1781,8 +1836,13 @@ static func _cn_ensure(n: int) -> Dictionary:
 			end_atoms.append(_cn_entry(a4, at4.perm, pc))
 	for cn4: String in conn:
 		end_atoms.append(_cn_entry(cn4, conn[cn4], pc))
+	# A 族入 end_atoms(§2.4-3):T 纯 3-cycle(moved==3)与 Q 中央层面内对换
+	# (keeps==63,仅奇阶中央档满足)入收尾 DFS 域;S 档不入(中盘整带武器,§2.1)
+	for at6: Dictionary in a_atoms:
+		if String(at6.fam) == "T" or (String(at6.fam) == "Q" and int(at6.entry.keeps) == 63):
+			end_atoms.append(at6.entry)
 	_cn_ctx[n] = {"cells": cells, "pc": pc, "m": cells.size(), "pool1": pool1,
-			"conj1": conj1,
+			"a_pool1": a_pool1, "conj1": conj1,
 			"bfs_atoms": bfs_atoms, "end_atoms": end_atoms,
 			"cap": 800}
 	return _cn_ctx[n]
@@ -1970,7 +2030,9 @@ static func _cn_dfs_rec(cur: PackedByteArray, sub: Array, p0: int, m0: int, focu
 	return {}
 
 
-## depth1 贪心:全池扫描,完成面保持 ∧ placed 严格增,择 (inc 最大, tokens 最短)。
+## depth1 贪心:旧池 first-hit(池序第一个过滤命中;2026-10-03 性能实证:7 阶
+## 全扫描评每段秒级不可负担)∧ A 族择优(2026-10-05 方案 B,见循环后段)。
+## 完成面保持 ∧ focus/placed 过滤两域同规。
 static func _cn_greedy(st: PackedByteArray, n: int) -> Dictionary:
 	var ctx: Dictionary = _cn_ensure(n)
 	var pc: int = ctx.pc
@@ -1980,7 +2042,6 @@ static func _cn_greedy(st: PackedByteArray, n: int) -> Dictionary:
 	#   done=0 期 = lex(单面最大对格增, placed 增)——集中堆出第一个完成面;分散推进
 	#   placed 会落入「高 placed 无完成面」死坎(全部 15 预演态同款卡点);
 	#   done≠0 期 = placed 增(完成面由 keeps 硬约束保护,4 阶语义)。
-	# 平局取短;first-hit 早退(7 阶池域全扫每段秒级,不可负担)
 	var best := {}
 	var focus: bool = done == 0
 	var m0 := 0
@@ -2012,6 +2073,33 @@ static func _cn_greedy(st: PackedByteArray, n: int) -> Dictionary:
 		best = {"alg": String(entry.alg), "perm": entry.perm, "inc": inc,
 				"tokens": tok, "k": key2, "text": "中心交换宏:送回 %d 块中心" % inc}
 		break  # first-hit:命中即取(2026-10-03 性能实证,最优全扫在 n=7 不可负担)
+	# A 族择优(2026-10-05 P1 方案 B,§8 风险 1 解剖裁决):A 族若与旧池同池
+	# 尾部排列,first-hit 早退使其在活体贪心段永不参与(池序死区——解剖
+	# n=5 seed=20261009:11/19 段 A 族 k=1000-2003 严格胜出而零参与,keeps/
+	# focus 剪枝均非主拒因)。修复:a_pool1 单独全扫(64-192 条/段,约旧池
+	# 全扫的 1/8-1/12 成本),通过同款 keeps/focus 过滤后取 key 最高者;仅
+	# key 严格更优(或旧池无命中)时切换——旧池 first-hit 路径零变化。
+	for entry: Dictionary in ctx.a_pool1:
+		if done & ~int(entry.keeps) != 0:
+			continue  # 破已完成面(与旧池同规)
+		var st3 := _cn_apply(st, entry.perm)
+		var inc3: int = _cn_placed(st3, pc) - p0
+		var ma3 := 0
+		if focus:
+			ma3 = _cn_max_align(st3, pc) - m0
+			if ma3 < 0:
+				continue
+			if ma3 == 0 and inc3 <= 0:
+				continue
+			if ma3 > 0 and inc3 < -2:
+				continue
+		elif inc3 <= 0:
+			continue
+		var key3: int = ma3 * 1000 + inc3 if focus else inc3
+		if best.is_empty() or key3 > int(best.k):
+			best = {"alg": String(entry.alg), "perm": entry.perm, "inc": inc3,
+					"tokens": int(entry.tokens), "k": key3,
+					"text": "中心交换宏:送回 %d 块中心" % inc3}
 	if best.is_empty():
 		return {}
 	return {"alg": String(best.alg), "perm": best.perm, "inc": int(best.inc),
@@ -2209,7 +2297,9 @@ static func _cn_solve(facelets: PackedByteArray, n: int) -> Dictionary:
 	# 收敛仍靠贪心→逃逸链(2026-10-05 实验链定稿:guard 上调/随机重启/逃逸搜索
 	# 加宽/time box 四路实验对 lex 局部 optimum(差 1-2 格收尾坎)全部 0 破解,
 	# 降级率仍 100%——剩余缺口 = 宏族扩充(中盘 3-cycle + 收尾两面宏,§6 入池
-	# 条款逐条实测),预计落地时 guard 需上调至 100-250 段/400-900 步,见 EXPERIENCE。
+	# 条款逐条实测)。2026-10-05 P1 已落地:A 族三子族入池 + guard 定档
+	# 150 段/600 步(实测穷尽上界 55 段/226 步 ×2.7,PLAN §12 100-250/400-900
+	# 区间中位;不取 250/900 上限,为残余降级保失败路径成本)。
 	# 本函数保留:预对齐(可达性前提)+ focus 单调化(禁 placed↔对格震荡)。
 	var guard := 0
 	while _cn_done_mask(st, pc) != 63:

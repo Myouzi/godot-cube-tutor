@@ -51,6 +51,7 @@ func _run() -> void:
 	_test_stage_constructed()
 	_test_constructed_solve()
 	_test_golden_10()
+	_test_cn_golden_5x7()
 	_test_boundaries()
 	print("ALL PASSED" if not _failed else "FAILED")
 	quit(1 if _failed else 0)
@@ -241,6 +242,88 @@ func _test_golden_10() -> void:
 	_check(ok_all and n_ok + n_degraded == 10,
 		"TNC-4 金标准 10 态:全绿 %d + 带标记降级 %d(死锁构型比例 %.0f%%)"
 		% [n_ok, n_degraded, 100.0 * n_degraded / 10.0])
+
+
+## TNC-6 5-7 阶中心段金标准(P3 2026-10-05,center-macro-impl-design.md §7.2):
+## n∈{5,6,7} × 固定 seed 3 态(20261004+n+{0,100,200},与 test_server S9/卡点探针
+## 同集,确定性已证)→ solve_centers(_cn 路径,guard 150/步 600)→ ok:true 断言
+## 六面中心同色 + 段末 placed 单调不降 + 真机播放/逆向回打乱态;残余降级态断言
+## error 含『(降级)』并统计打印(熔断记录口径,带标记不判 FAIL)。
+## §7.2 原文预设『取探针中已解完态』——宏族 P1/P2 落地后实测 48 态 0 全解
+## (test-design §6.4 表达力上界),本段按降级分支走并如实记档;降级率回落后
+## ok 分支自动生效,无需改码。
+func _test_cn_golden_5x7() -> void:
+	var ok_all := true
+	var n_ok := 0
+	var n_degraded := 0
+	var t0 := Time.get_ticks_msec()
+	for n in [5, 6, 7]:
+		for off in [0, 100, 200]:
+			var sd: int = 20261004 + n + off
+			_cube.setup(n)
+			var rng := RandomNumberGenerator.new()
+			rng.seed = sd
+			_cube.scramble(20, rng)
+			var fs: PackedByteArray = _cube.to_facelets()
+			var r: Dictionary = NS.solve_centers(fs)
+			if not r.ok:
+				var err := String(r.get("error", ""))
+				if err.contains("(降级)"):
+					n_degraded += 1
+					print("  降级 n=%d seed=%d: %s" % [n, sd, err])
+					continue
+				ok_all = false
+				printerr("  n=%d seed=%d 失败且无降级标记: %s" % [n, sd, err])
+				break
+			# 段末 placed 单调不降(模拟器逐段回放;prealg/宏段都在 segments)
+			var pc: int = (n - 2) * (n - 2)
+			var sim: PackedByteArray = NS._cn_state_of(fs, n)
+			var prev := NS._cn_placed(sim, pc)
+			var ok_seg := true
+			for seg in r.segments:
+				sim = NS._cn_apply(sim, NS._cn_id_perm(String(seg.alg), n, NS._cn_cells(n)))
+				var pc_now := NS._cn_placed(sim, pc)
+				if pc_now < prev:
+					ok_seg = false
+					printerr("  n=%d seed=%d 段后 placed 回退 %d→%d: %s" % [n, sd, prev, pc_now, seg.alg])
+					break
+				prev = pc_now
+			if not ok_seg or prev != 6 * pc:
+				ok_all = false
+				printerr("  n=%d seed=%d 段单调/终态不达(placed=%d/%d)" % [n, sd, prev, 6 * pc])
+				break
+			var simfs: PackedByteArray = _apply_and_read(String(r.alg), n)
+			if not NS._cn_uniform(simfs, n):
+				ok_all = false
+				printerr("  n=%d seed=%d 模拟播放后六面中心不同色" % [n, sd])
+				break
+			# 真机播放 + 逆向回打乱态
+			_apply_alg_cube(String(r.alg))
+			var played: PackedByteArray = _cube.to_facelets()
+			if not NS._cn_uniform(played, n):
+				ok_all = false
+				printerr("  n=%d seed=%d 真机播放后六面中心不同色(对拍失配)" % [n, sd])
+				break
+			_apply_alg_cube(LBL.invert_alg(String(r.alg)))
+			if _cube.to_facelets() != fs:
+				ok_all = false
+				printerr("  n=%d seed=%d 逆序 apply 未回打乱态" % [n, sd])
+				break
+			n_ok += 1
+	var ms := Time.get_ticks_msec() - t0
+	print("  5-7 阶金标准分布: 全绿 %d/9, 降级 %d/9, 本段耗时 %dms" % [n_ok, n_degraded, ms])
+	if n_degraded > 0:
+		print("  DEGRADED-RATIO %d/%d" % [n_degraded, 9])
+	_check(ok_all and n_ok + n_degraded == 9,
+			"TNC-6 5-7 阶金标准 9 态:全绿 %d + 带标记降级 %d(降级比例 %.0f%%)"
+					% [n_ok, n_degraded, 100.0 * n_degraded / 9.0])
+
+
+## facelets 上的模拟播放(不复原 _cube;_cn_uniform 6n² 直查用)。
+func _apply_and_read(alg: String, n: int) -> PackedByteArray:
+	_cube.setup(n)
+	_apply_alg_cube(alg)
+	return _cube.to_facelets()
 
 
 ## TNC-5 边界:solve(96) 不冒充全解(带原因 fail loud);n=5 长度 fail loud;

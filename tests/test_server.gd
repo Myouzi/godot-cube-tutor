@@ -18,6 +18,13 @@ const NOT_READY := "nxn_solver not ready"
 ## 存在(fail loud)」「约化 3 阶段: <lbl 错误>」不含——S9 以此区分两类)。
 const S9_DEGRADE_MARK := "(降级)"
 
+## S9 降级哈希锁定表(P2 落地后实测 2026-10-05,test-design §6.5):每 seed 卡点态
+## 哈希逐 seed 确定,偏离 = 引擎行为变化的可判定信号(防静默回归)。引擎迭代改变
+## 降级轨迹时更新本表并在 §6.5 记录;降级率回落后删 SKIP 分支恢复 any_solved 硬断言。
+const CN_KEY_LOCK := {5: {20261009: "1056292279", 20261109: "2092487133", 20261209: "1419916045"},
+		6: {20261010: "1395471020", 20261110: "4080059418", 20261210: "2633837371"},
+		7: {20261011: "1606329917", 20261111: "1335305809", 20261211: "1992924430"}}
+
 
 func _initialize() -> void:
 	_run()
@@ -191,6 +198,7 @@ func _test_nxn_protocol_all() -> void:
 			seeds = [20261004 + n, 20261004 + n + 100, 20261004 + n + 200]
 		var skipped := false
 		var any_solved := false
+		var cn_keys := {}   # seed -> 降级卡点态哈希(锁定用)
 		for sd_v in seeds:
 			var sd: int = sd_v
 			_cube.setup(n)
@@ -223,6 +231,9 @@ func _test_nxn_protocol_all() -> void:
 			_check(err.contains(S9_DEGRADE_MARK),
 					"S9 N=%d seed=%d solve 降级 error 带『%s』标记 实际=%s" % [n, sd, S9_DEGRADE_MARK, err])
 			print("PASS  S9 N=%d seed=%d solve 走降级熔断(%s)" % [n, sd, err])
+			var ki := err.find("卡点态 ")
+			if ki >= 0:
+				cn_keys[sd] = err.substr(ki + 4).strip_edges()
 		if skipped:
 			continue
 		# 降级率回落可判定口径(设计 §1.1-2):n≥5 每阶 3 seed 中 ≥1 全解。
@@ -232,7 +243,18 @@ func _test_nxn_protocol_all() -> void:
 		# SKIP+形态记录替代,P2 B 族落地后重跑 S9 补验并恢复硬断言;解剖为非
 		# 收尾形态则并入 §8 风险 1 路径(改代码前先解剖,EXPERIENCE.md 方法论)。
 		if not any_solved and n >= 5:
-			print("SKIP  S9 N=%d 3 seed 全降级(条件通过条款:跑探针 tests/_probe_stuck_survey.gd 解剖降级点形态;收尾残余=P2 主治域,非收尾=§8 风险 1)" % n)
+			# 条件通过条款已走完(P2 落地后补验 0/9 全解,test-design §6.5):SKIP
+			# 出口升级为卡点态哈希回归锁定(终审 2026-10-05)——降级率 100% 现状下
+			# any_solved 硬断言必然红,锁定断言替代其保护力(行为变化可判定);
+			# 表达力上界突破、降级率回落后删本分支恢复硬断言并更新 §6.5。
+			var lock: Dictionary = CN_KEY_LOCK[n]
+			var ok_lock: bool = cn_keys.size() == lock.size()
+			if ok_lock:
+				for sd2 in lock:
+					if not cn_keys.has(sd2) or String(cn_keys[sd2]) != String(lock[sd2]):
+						ok_lock = false
+			_check(ok_lock, "S9 N=%d 降级哈希回归锁定(卡点态逐 seed 偏离=引擎行为变化) 实测=%s" % [n, str(cn_keys)])
+			print("SKIP  S9 N=%d 3 seed 全降级(哈希锁定见上;降级率回落验收悬置至表达力上界突破)" % n)
 		else:
 			_check(any_solved, "S9 N=%d 3 seed 中 ≥1 全解(降级率回落验收)" % n)
 		# hint 断言固定在第一个 seed 的状态上(solve 纯计算不改面,重打乱对齐)

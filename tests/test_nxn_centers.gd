@@ -292,12 +292,16 @@ func _test_cn_golden_5x7() -> void:
 				ok_all = false
 				printerr("  n=%d seed=%d 段单调/终态不达(placed=%d/%d)" % [n, sd, prev, 6 * pc])
 				break
-			var simfs: PackedByteArray = _apply_and_read(String(r.alg), n)
+			# 模拟播放(facelets 全量,数学路径):起点 = fs 打乱态(同 TNC-4 惯例;
+			# 终审 2026-10-05 修复:原 _apply_and_read 误先 _cube.setup 重置为复原态,
+			# 复原态∘r.alg = 打乱态中心段,降级率回落后 ok 分支必假红)
+			var simfs: PackedByteArray = fs.duplicate()
+			NS._apply_alg(simfs, String(r.alg))
 			if not NS._cn_uniform(simfs, n):
 				ok_all = false
 				printerr("  n=%d seed=%d 模拟播放后六面中心不同色" % [n, sd])
 				break
-			# 真机播放 + 逆向回打乱态
+			# 真机播放(起点 = 当前打乱态,无重置)+ 逆向回打乱态
 			_apply_alg_cube(String(r.alg))
 			var played: PackedByteArray = _cube.to_facelets()
 			if not NS._cn_uniform(played, n):
@@ -318,12 +322,6 @@ func _test_cn_golden_5x7() -> void:
 			"TNC-6 5-7 阶金标准 9 态:全绿 %d + 带标记降级 %d(降级比例 %.0f%%)"
 					% [n_ok, n_degraded, 100.0 * n_degraded / 9.0])
 
-
-## facelets 上的模拟播放(不复原 _cube;_cn_uniform 6n² 直查用)。
-func _apply_and_read(alg: String, n: int) -> PackedByteArray:
-	_cube.setup(n)
-	_apply_alg_cube(alg)
-	return _cube.to_facelets()
 
 
 ## TNC-5 边界:solve(96) 不冒充全解(带原因 fail loud);n=5 长度 fail loud;

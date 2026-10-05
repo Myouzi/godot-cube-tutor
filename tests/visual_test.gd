@@ -1,4 +1,5 @@
 extends SceneTree
+const NS := preload("res://scripts/nxn_solver.gd")
 ## 视觉验收(PLAN §8,仅 N=3):opengl3 真渲染截 3 张 PNG 到 out/ + facelets 逻辑断言。
 ## 运行(项目根,必须带 DISPLAY,不能 headless):
 ##   env DISPLAY=:0 godot --rendering-driver opengl3 -s tests/visual_test.gd
@@ -347,6 +348,42 @@ func _run() -> void:
 	await _wait_frames(4)  # _process 刷新 → HintLabel 持久显示中心段降级原因
 	_check(String(main.teach_hint.text).contains("⚠"), "B1.5b HintLabel 持久显示 ⚠ 中心段降级")
 	await _save_shot(out_dir + "/shot_hint_degrade_center.png")
+	main._set_mode(0)
+
+	# ---- B1.6 5 阶教学跟随冒烟(P3 2026-10-05,用户裁决补充,设计 §7 原缺):
+	# setup(5) + 固定 seed(20261015)scramble → 逐步跟随 hint 至终态。当前引擎
+	# 5-7 阶降级率 100%(宏族 P1/P2 落地后仍为表达力穷尽口径,test-design §6.4),
+	# 终态 = 中心段降级为预期之一;双分支断言不得假红——复原分支断言六面同色
+	# (中心区 _cn_uniform),降级分支断言 error 含降级标记;降级率回落后本用例
+	# 自动走复原分支,无需改码。
+	main._on_size_selected(5)
+	await _wait_frames(4)
+	var rng5b := RandomNumberGenerator.new()
+	rng5b.seed = 20261015
+	cube.scramble(20, rng5b)
+	while cube.is_animating():
+		await process_frame
+	var solved5 := false
+	var deg5 := false
+	for step5 in 300:
+		var h5: Dictionary = main._teach_hint()
+		if not String(h5.get("error", "")).is_empty():
+			deg5 = true
+			_check(String(h5.error).contains("降级"),
+					"B1.6 5 阶跟随至降级点,error 含降级标记 实际=%s" % String(h5.error).substr(0, 48))
+			break
+		var sug5: Dictionary = h5.get("suggestion", {})
+		if sug5.is_empty() or String(sug5.get("alg", "")).is_empty():
+			break
+		for st5 in cube.parse_alg(String(sug5.alg)):
+			cube.apply_turn(st5.axis, st5.layers, st5.angle)
+	if not deg5:
+		solved5 = NS._cn_uniform(cube.to_facelets(), 5)
+		_check(solved5, "B1.6 5 阶跟随至复原,六面中心同色")
+	_check(deg5 or solved5, "B1.6 5 阶跟随到达确定终态(降级=%s 复原=%s)" % [deg5, solved5])
+	main._set_mode(1)
+	await _wait_frames(4)
+	await _save_shot(out_dir + "/shot_n5_follow.png")
 	main._set_mode(0)
 
 	main._on_size_selected(3)

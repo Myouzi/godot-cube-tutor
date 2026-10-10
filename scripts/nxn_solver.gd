@@ -2360,19 +2360,38 @@ static func _cn_solve(facelets: PackedByteArray, n: int) -> Dictionary:
 	while _cn_done_mask(st, pc) != 63:
 		guard += 1
 		if guard > CN_STAGE_GUARD or total >= CN_MOVE_LIMIT:
-			return {"ok": false, "alg": "", "stages": [], "segments": [],
-					"error": "中心段模板池未覆盖(降级): 超 guard 上限(段 %d / 步 %d)"
-							% [guard, total]}
+			return _cn_fallback_exit(st, n, segs, all, total,
+					"超 guard 上限(段 %d / 步 %d)" % [guard, total])
 		var seg := _cn_segment(st, n)
 		if seg.is_empty():
-			# 约束搜索穷尽 = 降级 fail loud(P3 熔断条款同款,P4b 续用)
-			return {"ok": false, "alg": "", "stages": [], "segments": [],
-					"error": "中心段模板池未覆盖(降级): 卡点态 %s" % _cn_key(st)}
+			# 约束搜索穷尽 → D1 保底器兜底;仍失败 = 降级 fail loud(P3 熔断)
+			return _cn_fallback_exit(st, n, segs, all, total,
+					"卡点态 %s" % _cn_key(st))
 		for m in (seg.segs if seg.has("segs") else [seg]):
 			st = _cn_apply(st, m.perm)
 			segs.append({"alg": String(m.alg), "text": String(m.text)})
 			all.append(String(m.alg))
 			total += int(m.tokens)
+	var joined := " ".join(all)
+	return {"ok": true, "alg": joined,
+			"stages": [{"name": STAGE_NAMES_NXN[0], "alg": joined}],
+			"moves": LBL._token_count(joined), "segments": segs}
+
+
+## 中心段模板池穷尽出口 → D1 保底器兜底(SS 截断链 sift,方案 §D1):成功 =
+## fallback 逐步段拼入后 ok:true;失败 = 保持降级 fail loud(P3 熔断条款),
+## error 注明保底器未通。prealg 契约:_cn_solve 开头已做,循环中 st 保持该姿态。
+static func _cn_fallback_exit(st: PackedByteArray, n: int, segs: Array,
+		all: Array, total: int, why: String) -> Dictionary:
+	var fb: Dictionary = _cn_fallback(st, n)
+	if fb.is_empty():
+		return {"ok": false, "alg": "", "stages": [], "segments": [],
+				"error": "中心段模板池未覆盖(降级): %s(保底器未通)" % why}
+	for m2: Dictionary in fb.segs:
+		segs.append({"alg": String(m2.alg),
+				"text": "中心保底整理:SS 链逐步归位"})
+		all.append(String(m2.alg))
+		total += int(m2.tokens)
 	var joined := " ".join(all)
 	return {"ok": true, "alg": joined,
 			"stages": [{"name": STAGE_NAMES_NXN[0], "alg": joined}],
@@ -3357,3 +3376,587 @@ static func _nxn_hint(facelets: PackedByteArray, n: int) -> Dictionary:
 	var lh := LBL.hint(_reduce_to_54(facelets, n))
 	return {"stage": 2 + int(lh.stage), "progress": float(lh.progress),
 			"suggestion": lh.suggestion}
+
+
+# ============ D1 中心段保底解法器(v7.3 r2 §4,2026-10-06) ============
+## 五轮短式枚举证伪后定案(tests/_probe_d1_spike{,2,3,4,5}.gd,EXPERIENCE
+## 2026-10-06 条):commutator/交差/共轭/乘积域均无法以短式覆盖任意构型类
+## 3-cycle 与对换——完备路线 = Schreier-Sims 型逐级稳定化分解:打乱态由层转
+## 生成 ⟹ 错格置换 σ ∈ ⟨toks⟩ 由定义保证,任意 σ 可分解为生成元积,无需
+## 构型类种子。构建期一次 _fb_ensure(n)(逐级 transversal 链,Schreier 生成元
+## 递推),运行期 _cn_fallback sifting 出扁平 gen 表达式;终验 done_mask==63
+## (fail loud,0% 硬目标的构造性口径)。
+## 约定:置换全部 pull 语义(应用 p 到态 out[j] = st[p[j]]);链 flat = gen
+## 下标序列,净函数 = c1∘c2∘…∘ck(c1 最外层,c_k 最先作用);卡点态数组本身
+## = 置换 σ(复原态 e[j]=j ⟹ st[j] = σ[j]),复原置换 q = σ⁻¹。
+
+## Schreier 生成元每级截断上限初值(去重后按 flat 长度优选;生成性由自适应
+## 扩容重试保证——构建后 50 个随机 σ sifting 自检,失败 cap×4 重建)
+const CN_FB_SCHREIER_CAP := 64
+## 每级 s_next(短链截断)数量上限。实测谱系:n=4 10/10、n=5 8/10(卡点态
+## 2/2 OK);n≥5 更大 cap 会让 cands2/链长爆炸(27GB OOM 实证),n≥6 覆盖
+## 不足(cands 域缺元,sift 大面积失败)——见方案 §D1 止损记录
+## 候选点限流(每级 Schreier 生成元覆盖的轨道点数上限)
+## 候选点限流(实测:限流破坏轨道覆盖 → 链病态化 → 自检挂 → 重试反而更慢;
+## 撤销限流保完整性,构建成本以全点候选为准)
+const CN_FB_P_LIMIT := 4096
+## 表达式保险丝(方案 §4 CN_FALLBACK_MOVE_LIMIT 口径;超限 = 构造失败交
+## 降级出口并记档)
+const CN_FB_MAX_TOKENS := 2000
+## 奇偶修正开关(A/B 实测中,见 _fb_sigma_of 注释)
+const CN_FB_PARITY_FIX := false
+
+static var _fb_ctx: Dictionary = {}
+
+
+## 构建(n 每阶一次):gens(层转全集+库原子 moved≤12,含逆式)+ levels[i] =
+## {s: [{flat, perm}], trans: {点: {flat, perm, iperm, invflat}}}。短链截断版
+## 自检存在完备性缺口(截断的代价),不重建——fallback 逐态 sift,失败态走
+## 既有降级出口,fail loud 记档。
+static func _fb_ensure(n: int) -> Dictionary:
+	if _fb_ctx.has(n):
+		return _fb_ctx[n]
+	_fb_ctx[n] = _fb_build(n, CN_FB_SCHREIER_CAP)
+	return _fb_ctx[n]
+
+
+## 自检:50 个随机 σ(gen 随机积 30 步,pull)逐个 sifting——全过 = 链完整。
+static func _fb_selfcheck(fb: Dictionary, n: int) -> bool:
+	var gens: Array = fb.gens
+	var m: int = fb.m
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 42042 + n
+	for t in 50:
+		var sigma := _fb_id(m)
+		for step in 8:
+			var g: Dictionary = gens[rng.randi() % gens.size()]
+			sigma = _fb_comp_first_second(sigma, g.perm, m)
+		# sift sigma(不建 segs)
+		var levels: Array = fb.levels
+		var gen_inv: Array = fb.gen_inv
+		var s := _fb_inv(sigma, m)
+		var ok := true
+		for i in levels.size():
+			var p: int = s[i]
+			if p == i:
+				continue
+			var trans: Dictionary = levels[i].trans
+			if not trans.has(p):
+				ok = false
+				break
+			var uinv := _fb_inv((trans[p] as Dictionary).perm as PackedInt32Array, m)
+			s = _fb_comp_first_second(uinv, s, m)
+		if not ok or not _fb_is_id(s, m, m):
+			return false
+	return true
+
+
+static func _fb_build(n: int, cap: int) -> Dictionary:
+	var cells: PackedInt32Array = _cn_cells(n)
+	var m: int = cells.size()
+	var pc: int = (n - 2) * (n - 2)
+	# --- 生成元域 ---
+	var gens: Array = []          # [{alg, perm, tokens}]
+	var gen_inv: Array = []       # 每个下标的逆式下标
+	var idx_of: Dictionary = {}   # 置换 key -> 下标
+	var seen: Dictionary = {}
+	for f in ["U", "R", "F", "D", "L", "B"]:
+		for suf in ["", "'", "2"]:
+			var ta: String = f + suf
+			var tp := _cn_id_perm(ta, n, cells)
+			var kk := _fb_key(tp)
+			if seen.has(kk):
+				continue
+			seen[kk] = true
+			idx_of[kk] = gens.size()
+			gens.append({"alg": ta, "perm": tp, "tokens": 1})
+	# 内层转全集(d∈3..n-1;缺此域则轨道闭包拆分——n=6 实测 20+4 病态拆分)
+	for d in range(3, n):
+		for f in ["U", "R", "F", "D", "L", "B"]:
+			for suf in ["", "'", "2"]:
+				var ta: String = "%d%s%s" % [d, f, suf]
+				var tp2 := _cn_id_perm(ta, n, cells)
+				var kk2 := _fb_key(tp2)
+				if seen.has(kk2):
+					continue
+				seen[kk2] = true
+				idx_of[kk2] = gens.size()
+				gens.append({"alg": ta, "perm": tp2, "tokens": 1})
+	var ctx0: Dictionary = _cn_ensure(n)
+	var cands: Array = []
+	for key3 in ["end_atoms", "bfs_atoms"]:
+		for e: Dictionary in ctx0[key3]:
+			var ep: PackedInt32Array = e.perm
+			var mv := 0
+			for k2 in m:
+				if ep[k2] != k2:
+					mv += 1
+			if mv == 0 or mv > 12:
+				continue
+			cands.append({"alg": String(e.alg), "perm": ep,
+					"tokens": int(e.tokens), "mv": mv})
+	cands.sort_custom(func(a, b) -> bool: return int(a.mv) < int(b.mv))
+	for c in cands:
+		var kk2 := _fb_key(c.perm)
+		if seen.has(kk2):
+			continue
+		seen[kk2] = true
+		idx_of[kk2] = gens.size()
+		gens.append({"alg": String(c.alg), "perm": c.perm, "tokens": int(c.tokens)})
+	# 逆式:层转的逆 token 必在;库原子逆补录入池(保证任意 flat 链可取逆)。
+	# 注:for-in-range 循环开始时求值一次,补录的新 gen 由循环后 while 补齐
+	# (新 gen 的逆 = 原 gen,必已在 idx_of)。
+	while gen_inv.size() < gens.size():
+		var gi := gen_inv.size()
+		var iv := _fb_inv(gens[gi].perm, m)
+		var ki := _fb_key(iv)
+		if not idx_of.has(ki):
+			idx_of[ki] = gens.size()
+			gens.append({"alg": _fb_inv_alg(String(gens[gi].alg)),
+					"perm": iv, "tokens": int(gens[gi].tokens)})
+		gen_inv.append(int(idx_of[ki]))
+	# --- SS 分级 ---
+	var levels: Array = []
+	var s_cur: Array = []   # [{flat: PackedInt32Array(gen 下标), perm}]
+	for gi in gens.size():
+		var f0 := PackedInt32Array()
+		f0.append(gi)
+		s_cur.append({"flat": f0, "perm": gens[gi].perm})
+	for i in m:
+		# transversal BFS(前插语义:链 flat = s.flat + 前缀 flat,净 = s∘前缀)
+		var trans: Dictionary = {}      # 点 -> {flat, perm, iperm}(invflat 延迟:
+		# BFS 每边拼 O(链长) 在深级爆炸——实测 n=5 分钟级;只在入选元现算)
+		trans[i] = {"flat": PackedInt32Array(),
+				"perm": _fb_id(m), "iperm": _fb_id(m)}
+		var queue: Array = [i]
+		var qi := 0
+		while qi < queue.size():
+			var x: int = queue[qi]
+			qi += 1
+			var pre: Dictionary = trans[x]
+			var pre_flat: PackedInt32Array = pre.flat
+			var pre_perm: PackedInt32Array = pre.perm
+			var pre_iperm: PackedInt32Array = pre.iperm
+			for s in s_cur:
+				var y: int = (s.perm as PackedInt32Array)[x]
+				if trans.has(y):
+					continue
+				var flat := PackedInt32Array()
+				flat.append_array(s.flat)
+				flat.append_array(pre_flat)
+				var perm := _fb_comp_first_second(s.perm, pre_perm, m)
+				var iperm := _fb_comp_first_second(pre_iperm, _fb_inv(s.perm, m), m)
+				trans[y] = {"flat": flat, "perm": perm, "iperm": iperm}
+				queue.append(y)
+		levels.append({"s": s_cur, "trans": trans})
+		if i == m - 1 or s_cur.is_empty():
+			break
+		# Schreier 生成元 s = v⁻¹∘g∘u → 短链优选截断 cap:按表达式长度排序取
+		# 前 cap(链短 = sift 便宜、token 少;截断的完备性缺口由 _fb_selfcheck
+		# fail loud 兜底)。实测谱系:增量残差法数学更完备但 n≥5 构建分钟级;
+		# 轨道级联 SS 受非本原块结构限制(单轨 3-环共轭铺不开全轨)——短链
+		# 截断版是构建成本/覆盖率的实测最优折中。
+		var s_next: Array = []
+		var seen2: Dictionary = {}
+		var cands2: Array = []
+		for p: int in trans:
+			var uD: Dictionary = trans[p]
+			var uflat: PackedInt32Array = uD.flat
+			var uperm: PackedInt32Array = uD.perm
+			for g in s_cur:
+				var gperm: PackedInt32Array = g.perm
+				var mid: int = gperm[p]
+				if not trans.has(mid):
+					continue
+				var vD: Dictionary = trans[mid]
+				var wperm := _fb_comp_first_second(vD.iperm as PackedInt32Array,
+						_fb_comp_first_second(gperm, uperm, m), m)
+				if wperm[i] != i:
+					continue   # 稳定性 s(i) = v⁻¹(g(u(i))) = i
+				if seen2.has(wperm):
+					continue
+				seen2[wperm] = true
+				cands2.append({"vD": vD, "g": g, "uflat": uflat, "perm": wperm,
+						"ln": (vD.flat as PackedInt32Array).size()
+								+ (g.flat as PackedInt32Array).size() + uflat.size()})
+		cands2.sort_custom(func(a, b) -> bool: return int(a.ln) < int(b.ln))
+		# 纯短链截断 cap(入选即拼 flat)。选择策略实测谱系(2026-10-10):
+		# 纯短链 n=5 4/10 最优;像去重 movers 保下级传递但长链级联令 n=5 归零;
+		# 两遍选择 n=6 构建爆内存;增量残差法 n≥5 构建分钟级;轨道级联 SS 受
+		# 非本原块结构限制——截断信息损失是本质困境,残余缺口交降级出口。
+		for c3 in cands2:
+			if s_next.size() >= cap:
+				break
+			var vD2: Dictionary = c3.vD
+			var flat2 := PackedInt32Array()
+			flat2.append_array(_fb_chain_inv(vD2.flat as PackedInt32Array, gen_inv))
+			flat2.append_array(c3.g.flat as PackedInt32Array)
+			flat2.append_array(c3.uflat as PackedInt32Array)
+			s_next.append({"flat": flat2, "perm": c3.perm})
+		s_cur = s_next
+	# 轨道表(σ 配对用:转动群保轨道 ⟹ (轨道,颜色) 格数守恒)
+	var orbit_of := PackedInt32Array()
+	orbit_of.resize(m)
+	var uf2 := _UnionFindP.new(m)
+	for g in gens:
+		var gp: PackedInt32Array = g.perm
+		for j in m:
+			uf2.union(j, gp[j])
+	var orbit_groups: Dictionary = {}
+	for j in m:
+		var r: int = uf2.find(j)
+		orbit_of[j] = r
+		if not orbit_groups.has(r):
+			orbit_groups[r] = []   # 普通 Array(引用语义;PackedArray 经 cast append 是 COW 副本,写入丢失)
+		(orbit_groups[r] as Array).append(j)
+	_fb_ctx[n] = {"levels": levels, "gens": gens, "gen_inv": gen_inv, "m": m,
+			"pc": pc, "orbit_of": orbit_of, "orbit_groups": orbit_groups}
+	return _fb_ctx[n]
+
+
+## σ 构造:同轨同色排序配对双射 h(格 i 的块应去 h(i)),σ = h⁻¹。
+## h|轨道 = 各颜色组排序配对的拼合,奇偶恒偶(恒等 π)⟹ ∈ G|轨道 ⊇ A
+## (Jordan:传递+含 3-cycle+本原,本原性由自检兜底)——情形 Y 约束自动满足。
+## (轨道,颜色) 计数守恒由转动群保轨道保证,违约(理论不发生)返回空。
+static func _fb_sigma_of(st: PackedByteArray, fb: Dictionary) -> PackedInt32Array:
+	var m: int = fb.m
+	var pc: int = fb.pc
+	var orbit_of: PackedInt32Array = fb.orbit_of
+	var orbit_groups: Dictionary = fb.orbit_groups
+	# home 格集:per (轨道, 颜色)
+	var home_by: Dictionary = {}   # "t_c" -> Array(升序)
+	for t in orbit_groups:
+		for j in orbit_groups[t]:
+			var c: int = j / pc
+			var key := "%d_%d" % [t, c]
+			if not home_by.has(key):
+				home_by[key] = []
+			(home_by[key] as Array).append(j)
+	var h := PackedInt32Array()
+	h.resize(m)
+	var cur_by: Dictionary = {}
+	for i in m:
+		var key2 := "%d_%d" % [orbit_of[i], st[i]]
+		if not cur_by.has(key2):
+			cur_by[key2] = []
+		(cur_by[key2] as Array).append(i)
+	for key3 in cur_by:
+		if not home_by.has(key3):
+			return PackedInt32Array()
+		var cur: Array = cur_by[key3]
+		var home: Array = home_by[key3]
+		if cur.size() != home.size():
+			return PackedInt32Array()
+		for a in cur.size():
+			h[cur[a]] = home[a]
+	# 奇偶可达性修正:G|轨道 未必含全部 S(本原性未证,实测 n=5+ 部分轨道
+	# 奇偶受限——A0 情形 Y 的耦合约束)。σ = h⁻¹ 必须 ∈ ⟨gens⟩ ⟹ h 的
+	# 每轨道符号向量必须落在 gens 符号向量的 F2 行空间内;违约时交换同组内
+	# 两对配对(翻转该轨道符号)向行空间最近向量调整。
+	var orbit_ids: Array = orbit_groups.keys()
+	orbit_ids.sort()
+	var k_t: int = orbit_ids.size()
+	var t_index: Dictionary = {}
+	for ti in k_t:
+		t_index[orbit_ids[ti]] = ti
+	# h 每轨道符号
+	var v := PackedInt32Array()
+	v.resize(k_t)
+	for ti in k_t:
+		var t: int = orbit_ids[ti]
+		var grp: Array = orbit_groups[t]
+		var sub := PackedInt32Array()
+		sub.resize(grp.size())
+		var loc: Dictionary = {}
+		for a in grp.size():
+			loc[grp[a]] = a
+		for a in grp.size():
+			sub[a] = loc[h[grp[a]]]
+		v[ti] = _fb_parity(sub)
+	# gens 符号矩阵 → 行空间
+	var basis: Array = []
+	var gens: Array = fb.gens
+	for g in gens:
+		var vec := PackedInt32Array()
+		vec.resize(k_t)
+		var gp: PackedInt32Array = g.perm
+		for ti in k_t:
+			var t2: int = orbit_ids[ti]
+			var grp2: Array = orbit_groups[t2]
+			var sub2 := PackedInt32Array()
+			sub2.resize(grp2.size())
+			var loc2: Dictionary = {}
+			for a in grp2.size():
+				loc2[grp2[a]] = a
+			for a in grp2.size():
+				sub2[a] = loc2[gp[grp2[a]]]
+			vec[ti] = _fb_parity(sub2)
+		# 高斯增量消元入 basis
+		var w := vec.duplicate()
+		for row in basis:
+			var lead := -1
+			for c2 in k_t:
+				if row[c2] == 1:
+					lead = c2
+					break
+			if lead >= 0 and w[lead] == 1:
+				for c3 in k_t:
+					w[c3] ^= row[c3]
+		var wlead := -1
+		for c4 in k_t:
+			if w[c4] == 1:
+				wlead = c4
+				break
+		if wlead >= 0:
+			basis.append(w)
+	# v ∈ span?否 → 最近行空间向量 v',逐轨道调符号。
+	# A/B 实测开关:修正判定用全 gens 行空间,而 sift 可行域由截断 s_cur
+	# 决定(更小)——修正可能把可行配对改坏(n=5 4/10 vs 8/10)。
+	var in_span := _fb_in_span(v, basis, k_t) if CN_FB_PARITY_FIX else true
+	if not in_span:
+		var v2 := _fb_nearest_span(v, basis, k_t)
+		for ti in k_t:
+			if v[ti] != v2[ti]:
+				# 交换该轨道某 (t,c) 组内两对 home(翻转 h|t 符号)
+				var t3: int = orbit_ids[ti]
+				var done_swap := false
+				for key4 in cur_by:
+					var kk_parts: PackedStringArray = String(key4).split("_")
+					if int(kk_parts[0]) != t3:
+						continue
+					var cur3: Array = cur_by[key4]
+					var home3: Array = home_by[key4]
+					if cur3.size() >= 2:
+						var tmp = home3[0]
+						home3[0] = home3[1]
+						home3[1] = tmp
+						h[cur3[0]] = home3[0]
+						h[cur3[1]] = home3[1]
+						done_swap = true
+						break
+				if not done_swap:
+					return PackedInt32Array()
+	return _fb_inv(h, m)
+
+
+## 有限序列置换符号(0 偶 1 奇;sub[a] = a 位的像,值域 = 同集合)。
+static func _fb_parity(sub: PackedInt32Array) -> int:
+	var seen := PackedByteArray()
+	seen.resize(sub.size())
+	var cycles := 0
+	for st2 in sub.size():
+		if seen[st2] == 1:
+			continue
+		cycles += 1
+		var j := st2
+		while seen[j] == 0:
+			seen[j] = 1
+			j = sub[j]
+	return (sub.size() - cycles) % 2
+
+
+static func _fb_in_span(v: PackedInt32Array, basis: Array, k: int) -> bool:
+	var w := v.duplicate()
+	for row in basis:
+		var lead := -1
+		for c in k:
+			if row[c] == 1:
+				lead = c
+				break
+		if lead >= 0 and w[lead] == 1:
+			for c2 in k:
+				w[c2] ^= row[c2]
+	for c3 in k:
+		if w[c3] == 1:
+			return false
+	return true
+
+
+## span 中与 v 汉明距离最近的向量(k ≤ 7,2^k 枚举 basis 子集 XOR)。
+static func _fb_nearest_span(v: PackedInt32Array, basis: Array, k: int) -> PackedInt32Array:
+	var best := PackedInt32Array()
+	var best_d := k + 1
+	for mask in range(1 << basis.size()):
+		var cand := PackedInt32Array()
+		cand.resize(k)
+		var mm := mask
+		var bi := 0
+		while mm > 0 and bi < basis.size():
+			if mm & 1:
+				var row: PackedInt32Array = basis[bi]
+				for c in k:
+					cand[c] ^= row[c]
+			mm >>= 1
+			bi += 1
+		var d := 0
+		for c in k:
+			d += v[c] ^ cand[c]
+		if d < best_d:
+			best_d = d
+			best = cand
+	return best
+
+
+## 卡点态保底求解:中心态是着色(值=颜色)非置换,σ 构造 = 同轨同色配对双射
+## h(格 i 的块应去 h(i)),复原置换 = h⁻¹(验证 st∘h⁻¹ = e:st(h⁻¹(j)) =
+## color(h(h⁻¹(j))) = color(j) = f(j) ✓)。h ∈ ⟨gens⟩ 的保证:按轨道分组配对
+## (转动群保轨道 ⟹ (轨道,颜色) 格数守恒),轨道内 h|t ∈ S_{|t|} ⊆ G|t
+## (n=4/5 情形 X 轨道奇偶自由)/配对奇偶按耦合约束调整(n=6/7 情形 Y,运行期
+## F2 判定,配对序可调奇偶)。逐级 sifting;终验 done_mask==63(fail loud)。
+## 契约:st 须经 _cn_prealg(真中心换面态在域外,调用方与 _cn_solve 同款先做)。
+static func _cn_fallback(st: PackedByteArray, n: int) -> Dictionary:
+	var fb: Dictionary = _fb_ensure(n)
+	var gens: Array = fb.gens
+	var gen_inv: Array = fb.gen_inv
+	var levels: Array = fb.levels
+	var m: int = fb.m
+	var pc: int = (n - 2) * (n - 2)
+	var sigma := _fb_sigma_of(st, fb)
+	if sigma.is_empty():
+		return {}
+	var flats: Array = []   # 命中的 u 扁平链,按 sifting 收集序
+	for i in levels.size():
+		var p: int = sigma[i]
+		if p == i:
+			continue
+		var trans: Dictionary = levels[i].trans
+		if not trans.has(p):
+			return {}
+		var uflat: PackedInt32Array = (trans[p] as Dictionary).flat
+		flats.append(uflat)
+		var uinv := _fb_chain_perm(_fb_chain_inv(uflat, gen_inv), gens, m)
+		sigma = _fb_comp_first_second(uinv, sigma, m)
+	if not _fb_is_id(sigma, m, m):
+		return {}
+	# σ = u₀∘u₁∘…∘u_k(u₀ 最外层)——_cn_apply 链式「先应用的在外层」,
+	# 实测定案(grilling 精神:方向四组合对照一次定位):flats 正序 × 链内
+	# 正序 × 原 gen。终验全程模拟 done_mask==63,方向错误在此 fail loud。
+	var segs: Array = []
+	var all: Array = []
+	var total := 0
+	var sim := st
+	for flat in flats:
+		for gi in flat:
+			var g: Dictionary = gens[gi]
+			sim = _cn_apply(sim, g.perm)
+			segs.append({"alg": String(g.alg), "perm": g.perm,
+					"tokens": int(g.tokens), "inc": 0,
+					"text": "保底整理:交换子逐步归位", "fb": true})
+			all.append(String(g.alg))
+			total += int(g.tokens)
+			if total > CN_FB_MAX_TOKENS:
+				return {}
+	if _cn_done_mask(sim, pc) != 63:
+		return {}
+	return {"segs": segs, "tokens": total, "alg": " ".join(all)}
+
+
+static func _fb_bytes_to_perm(st: PackedByteArray, m: int) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	out.resize(m)
+	for j in m:
+		out[j] = st[j]
+	return out
+
+
+class _UnionFindP:
+	var p: PackedInt32Array
+
+	func _init(size: int) -> void:
+		p.resize(size)
+		for i in size:
+			p[i] = i
+
+	func find(x: int) -> int:
+		while p[x] != x:
+			p[x] = p[p[x]]
+			x = p[x]
+		return x
+
+	func union(a: int, b: int) -> void:
+		var ra := find(a)
+		var rb := find(b)
+		if ra != rb:
+			p[rb] = ra
+
+
+static func _fb_chain_perm(flat: PackedInt32Array, gens: Array, m: int) -> PackedInt32Array:
+	var acc := PackedInt32Array()
+	acc.resize(m)
+	for j in m:
+		acc[j] = j
+	for gi in flat:
+		acc = _fb_comp_first_second(acc, gens[gi].perm, m)
+	return acc
+
+
+## 链逆 = 反转 + 逐位取逆 gen(净 = c1∘…∘ck ⟹ 逆 = ck⁻¹∘…∘c1⁻¹)
+## 链逆前插:inv(flat) 拼在 base 前(总净 = flat⁻¹∘base)。
+static func _fb_chain_inv_pre(flat: PackedInt32Array, gen_inv: Array, base: PackedInt32Array) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	out.resize(flat.size() + base.size())
+	for i in flat.size():
+		out[i] = gen_inv[flat[flat.size() - 1 - i]]
+	for i in base.size():
+		out[flat.size() + i] = base[i]
+	return out
+
+static func _fb_chain_inv(flat: PackedInt32Array, gen_inv: Array) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	out.resize(flat.size())
+	for i in flat.size():
+		out[flat.size() - 1 - i] = gen_inv[flat[i]]
+	return out
+
+
+static func _fb_inv_alg(alg: String) -> String:
+	var parts: PackedStringArray = alg.split(" ")
+	var out: Array = []
+	for i in range(parts.size() - 1, -1, -1):
+		var t: String = parts[i]
+		if t.ends_with("'"):
+			out.append(t.substr(0, t.length() - 1))
+		elif t.ends_with("2"):
+			out.append(t)
+		else:
+			out.append(t + "'")
+	return " ".join(out)
+
+
+static func _fb_id(m: int) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	out.resize(m)
+	for j in m:
+		out[j] = j
+	return out
+
+
+static func _fb_key(p: PackedInt32Array) -> String:
+	var s := ""
+	for v in p:
+		s += "%d," % v
+	return s
+
+
+static func _fb_comp_first_second(a: PackedInt32Array, b: PackedInt32Array, m: int) -> PackedInt32Array:
+	# 净 = a∘b(b 最先作用):net[j] = a[b[j]]
+	var out := PackedInt32Array()
+	out.resize(m)
+	for j in m:
+		out[j] = a[b[j]]
+	return out
+
+
+static func _fb_inv(p: PackedInt32Array, m: int) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	out.resize(m)
+	for j in m:
+		out[p[j]] = j
+	return out
+
+
+static func _fb_is_id(p: PackedInt32Array, prefix: int, m: int) -> bool:
+	for j in prefix:
+		if p[j] != j:
+			return false
+	return true

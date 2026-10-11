@@ -2443,6 +2443,12 @@ static func _cn_prealg(st: PackedByteArray, n: int) -> String:
 static func _cn_axis_tokens(face: String, n: int) -> PackedStringArray:
 	var toks := PackedStringArray()
 	for k in range(1, n):
+		# k=2 的 "2X" 单层记号被 _parse_wca_token 拒(Q4 裁决:2R 不设,双层用小写
+		# 宽转表述)——_apply_token 静默跳过使它恒为 no-op;留在解串里会令真机
+		# parse_alg 整批拒绝(模拟/真机对拍失配,TNE-6 n=5 实证),教学 UI 播放
+		# 同样会拒。不生成即行为零变化(no-op 本无贡献);d≥3 单层与 2Xw 宽层合法。
+		if k == 2:
+			continue
 		toks.append(face if k == 1 else "%d%s" % [k, face])
 	return toks
 

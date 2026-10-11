@@ -10,7 +10,7 @@ const CUBE := preload("res://scripts/cube.gd")
 
 func _initialize() -> void:
 	for n in [5, 6, 7]:
-		var trials: int = 3 if n >= 7 else 15
+		var trials: int = 15
 		var rng := RandomNumberGenerator.new()
 		rng.seed = 20260929
 		var cn_deg := 0

@@ -3403,18 +3403,154 @@ const CN_FB_P_LIMIT := 4096
 ## 表达式保险丝(方案 §4 CN_FALLBACK_MOVE_LIMIT 口径;超限 = 构造失败交
 ## 降级出口并记档)
 const CN_FB_MAX_TOKENS := 2000
-## 奇偶修正开关(A/B 实测中,见 _fb_sigma_of 注释)
-const CN_FB_PARITY_FIX := false
+## 奇偶修正开关(2026-10-11 翻转 true,impl-plan §3.3 两步走对账定案):
+## 阶段0实验A机器证明——未修正 σ 有 24/39 态奇偶越出 gens 符号行空间
+## (σ∉⟨gens⟩,sifting 结构性必挂;运行期现值 fallback n=6/7 随机态仅 11/50、
+## 4/50),修正版(sigma_fixed)0/39 越界且 B0 39 态+9 seed 全扫通(tools/
+## minkwitz_build.py 质量门 G4/G5 实测);n=5 行空间满维两口径恒等(翻转无影响)。
+## A/B 对账(_probe_d1_load.gd 引擎侧实测,248 态口径):关侧 136/248(n6 B0 5/15
+## 恰=in-span 5 态、随机 11/50;n7 B0 2/15、随机 4/50) vs 开侧 248/248
+## (n6/n7 B0 15/15+keylock 3/3+随机 50/50)——翻转收益非零确认,
+## n=6/7 情形 Y 重验通过。
+const CN_FB_PARITY_FIX := true
 
 static var _fb_ctx: Dictionary = {}
 
 
-## 构建(n 每阶一次):gens(层转全集+库原子 moved≤12,含逆式)+ levels[i] =
+## MKW1 离线词表加载(tools/minkwitz_build.py 产出,res://resources/minkwitz/n<N>.bin):
+## 返回与 _fb_build 同构的 ctx。任何失败(文件缺/版本不合/域哈希不匹配/规模不合/
+## gen 下标越界/加载后 50σ 自检挂)返回空 Dictionary,由 _fb_ensure 回退现算
+## _fb_build(行为不劣化)。gens 的 perm 由 alg 重算(alg 是唯一真源);gen_inv 与
+## orbit 表加载后重建;trans 的 perm 由 flat 逆序复合重算——iperm 与 levels[i].s
+## 仅离线构建期消费,不落盘;运行期消费端(_cn_fallback/_fb_selfcheck)只用
+## trans[p].flat 与 .perm。bin 布局见 tools/minkwitz_build.py 模块注释。
+static func _fb_load(n: int) -> Dictionary:
+	var path := "res://resources/minkwitz/n%d.bin" % n
+	if not FileAccess.file_exists(path):
+		return {}
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return {}
+	var cells: PackedInt32Array = _cn_cells(n)
+	var m: int = cells.size()
+	var pc: int = (n - 2) * (n - 2)
+	if f.get_length() < 14 or f.get_buffer(4) != "MKW1".to_utf8_buffer():
+		return {}
+	if f.get_8() != 1:          # version
+		return {}
+	if f.get_8() != n:
+		return {}
+	var dom_hash := f.get_32()
+	if f.get_16() != m:
+		return {}
+	var gen_count := f.get_16()
+	# gens: alg → perm 重算
+	var gens: Array = []
+	var algs: Array = []
+	for gi in gen_count:
+		var alg_len := f.get_8()
+		var alg := f.get_buffer(alg_len).get_string_from_utf8()
+		if f.get_8() != 1:      # tokens(层转恒 1)
+			return {}
+		gens.append({"alg": alg, "perm": _cn_id_perm(alg, n, cells), "tokens": 1})
+		algs.append(alg)
+	# 域哈希校验(djb2,规范串同 tools/minkwitz_build.py domain_hash)——引擎域
+	# 若日后变动(cells 定义/gens 记号),旧 bin 在此被拒而回退现算,防误载。
+	var canon := "n=%d;" % n
+	for gi2 in gens.size():
+		var pa: PackedInt32Array = (gens[gi2] as Dictionary).perm as PackedInt32Array
+		var ps := ""
+		for j in pa.size():
+			if j > 0:
+				ps += ","
+			ps += str(pa[j])
+		canon += "%s:%s;" % [algs[gi2], ps]
+	var hsh := 5381
+	for i2 in canon.length():
+		hsh = ((hsh * 33) + canon.unicode_at(i2)) & 0x7FFFFFFF
+	if hsh != dom_hash:
+		push_error("[fb_load] n=%d 域哈希不匹配(bin %d != 引擎域 %d),回退 _fb_build" % [n, dom_hash, hsh])
+		return {}
+	# levels: trans {点 -> {flat, perm}},perm 由 flat 逆序复合重算
+	var level_count := f.get_16()
+	if level_count != m:
+		return {}
+	var levels: Array = []
+	for li in level_count:
+		var entry_count := f.get_16()
+		var trans: Dictionary = {}
+		for ei in entry_count:
+			var p := f.get_16()
+			var flat_len := f.get_16()
+			var flat := PackedInt32Array()
+			flat.resize(flat_len)
+			for fi in flat_len:
+				var x := 0
+				var shift := 0
+				while true:
+					var b := f.get_8()
+					x |= (b & 0x7F) << shift
+					if (b & 0x80) == 0:
+						break
+					shift += 7
+				if x < 0 or x >= gens.size():
+					return {}
+				flat[fi] = x
+			var acc := PackedInt32Array()
+			acc.resize(m)
+			for j in m:
+				acc[j] = j
+			for fi2 in range(flat_len - 1, -1, -1):
+				acc = _fb_comp_first_second(
+						(gens[flat[fi2]] as Dictionary).perm as PackedInt32Array, acc, m)
+			trans[p] = {"flat": flat, "perm": acc}
+		levels.append({"trans": trans})
+	f.close()
+	# gen_inv 重建(层转全集互逆必在域内)
+	var gen_inv: Array = []
+	var idx_of: Dictionary = {}
+	for gi3 in gens.size():
+		idx_of[_fb_key((gens[gi3] as Dictionary).perm as PackedInt32Array)] = gi3
+	for gi4 in gens.size():
+		var iv := _fb_inv((gens[gi4] as Dictionary).perm as PackedInt32Array, m)
+		if not idx_of.has(_fb_key(iv)):
+			return {}
+		gen_inv.append(int(idx_of[_fb_key(iv)]))
+	# orbit 表重建(同 _fb_build :3597-3613)
+	var orbit_of := PackedInt32Array()
+	orbit_of.resize(m)
+	var uf := _UnionFindP.new(m)
+	for g in gens:
+		var gp: PackedInt32Array = g.perm
+		for j in m:
+			uf.union(j, gp[j])
+	var orbit_groups: Dictionary = {}
+	for j in m:
+		var r: int = uf.find(j)
+		orbit_of[j] = r
+		if not orbit_groups.has(r):
+			orbit_groups[r] = []
+		(orbit_groups[r] as Array).append(j)
+	var fb := {"levels": levels, "gens": gens, "gen_inv": gen_inv, "m": m,
+			"pc": pc, "orbit_of": orbit_of, "orbit_groups": orbit_groups}
+	if not _fb_selfcheck(fb, n):
+		push_error("[fb_load] n=%d 加载后 50σ 自检挂,回退 _fb_build" % n)
+		return {}
+	print("[fb_load] n=%d 离线词表加载成功(gens=%d levels=%d)" % [n, gens.size(), levels.size()])
+	return fb
+
+
+## 构建(n 每阶一次):优先加载离线词表(_fb_load,commit 2 产物);缺失/损坏回退
+## 现算 _fb_build(SS 链,含 Schreier 递推)。levels[i] =
 ## {s: [{flat, perm}], trans: {点: {flat, perm, iperm, invflat}}}。短链截断版
 ## 自检存在完备性缺口(截断的代价),不重建——fallback 逐态 sift,失败态走
 ## 既有降级出口,fail loud 记档。
 static func _fb_ensure(n: int) -> Dictionary:
 	if _fb_ctx.has(n):
+		return _fb_ctx[n]
+	var loaded: Dictionary = _fb_load(n)
+	if not loaded.is_empty():
+		_fb_ctx[n] = loaded
 		return _fb_ctx[n]
 	_fb_ctx[n] = _fb_build(n, CN_FB_SCHREIER_CAP)
 	return _fb_ctx[n]

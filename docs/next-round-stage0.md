@@ -190,3 +190,10 @@ bash -c 'ulimit -v 4000000 && timeout 600 godot --headless -s tests/_probe_b1_ca
 10. **「组合空间内级联全通不可达」措辞过强**：属实已修——收窄为「在本实验证据面内级联全通未达…实证天花板，非组合空间的穷尽证明」，证据面三要素显式列出。
 
 **修订中新发现并一并修正**（审读未列出）：枚举域 forms 合计上棒文本 334,840 系加总错误，六轮 RESULT 实测加总 = 336,840（单轮数与上棒全一致）；过闸合计实测 35,630（上棒 33,618 无法从现落盘探针输出复现，正文改用实测加总并标注）；moved3=1,008 与上棒一致。
+
+## 7. 产物去向（commit 2 时更新，红线 7：不在 /tmp 留唯一副本）
+
+- `/tmp/minkwitz_spike.py` 的截断版 `fb_build`/`fb_sift_stats` 已移植进 `tools/minkwitz_build.py`（与引擎 `_fb_build` 同构 + seed 扫描 + 质量门 G1-G5）；orbit 版与 v3 为已证死路线，不移植。
+- `/tmp/stage0_direct.py`（直测+级分布诊断）与 `/tmp/stage0_sweep.py`（seed×cap 扫描）的功能被管线质量门（G4 B0 直测逐态诊断）与 seed 扫描循环取代；本报告 §5 中引用的二脚本命令由管线的 G2-G5 输出等价承载（同一 fb_build、同一 σ 口径）。
+- `/tmp/stage0_align.py`（GDScript↔Python 索引对齐）为一次性使命已完成的验证脚本；其长效替代 = commit 1 引入的 djb2 域哈希机制（`tests/fixtures/minkwitz_gens.json` + bin 头比对）。
+- 以上 /tmp 脚本在 bin 全阶出库验证后删除。
